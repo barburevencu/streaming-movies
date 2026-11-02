@@ -37,7 +37,7 @@ SERVICES = {
     "Netflix": (["Netflix"], SIX),
     "HBO Max": (["HBO Max", "Max"], ["RO"]),
     "Disney+": (["Disney Plus", "Disney+"], SIX),
-    "Apple TV+": (["Apple TV Plus", "Apple TV+"], ["US"]),
+    "Apple TV+": (["Apple TV Plus", "Apple TV+", "Apple TV"], ["US"]),  # "Apple TV" since the 2025 rename; the store is "Apple TV Store"
     "Kanopy": (["Kanopy"], ["US"]),
 }
 
