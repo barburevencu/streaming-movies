@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Collect every movie streaming (by subscription) on our services into data.json.
+"""Collect every movie streaming (by subscription) on our platforms into data.json.
 
 Availability comes from TMDB's watch providers (powered by JustWatch); film
 details (director, country, runtime, genres) from TMDB and are cached in
 cache.json, so a refresh only looks up films it hasn't seen before.
-state.json remembers when each film first appeared on each service and
+state.json remembers when each film first appeared on each platform and
 region, which gives the site its "New" view and the list of titles that left.
 
 The TMDB key (v3 api key or v4 read token) comes from the TMDB_API_KEY
@@ -29,9 +29,9 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 SIX = ["RO", "US", "GB", "IT", "DE", "FR"]
 
-# Service -> (names TMDB may list it under, regions to check). Order is the
-# order of the site's Services pills.
-SERVICES = {
+# Platform -> (names TMDB may list it under, regions to check). Order is the
+# order of the site's Platforms pills.
+PLATFORMS = {
     "Criterion": (["Criterion Channel"], ["US"]),
     "Mubi": (["MUBI"], SIX),
     "Kanopy": (["Kanopy"], ["US"]),
@@ -145,26 +145,26 @@ def write_json(name, obj, **kw):
 def main():
     global KEY
     ap = argparse.ArgumentParser()
-    ap.add_argument("--only", action="append", choices=list(SERVICES), help="limit to these services")
+    ap.add_argument("--only", action="append", choices=list(PLATFORMS), help="limit to these platforms")
     args = ap.parse_args()
     KEY = load_key()
-    services = {k: v for k, v in SERVICES.items() if not args.only or k in args.only}
+    platforms = {k: v for k, v in PLATFORMS.items() if not args.only or k in args.only}
     today = dt.date.today().isoformat()
 
-    # Availability: film id -> {service: [regions]}, plus popularity.
+    # Availability: film id -> {platform: [regions]}, plus popularity.
     where, pop, checked = {}, {}, []
-    for service, (names, regions) in services.items():
+    for platform, (names, regions) in platforms.items():
         for region in regions:
             pid = provider_id(region, names)
             if pid is None:
-                print(f"  {service} {region}: not on TMDB, skipped")
+                print(f"  {platform} {region}: not on TMDB, skipped")
                 continue
             found = discover(pid, region)
-            checked.append(f"{service}|{region}")
+            checked.append(f"{platform}|{region}")
             for mid, p in found.items():
-                where.setdefault(mid, {}).setdefault(service, []).append(region)
+                where.setdefault(mid, {}).setdefault(platform, []).append(region)
                 pop[mid] = max(pop.get(mid, 0), p)
-            print(f"  {service} {region}: {len(found)} films")
+            print(f"  {platform} {region}: {len(found)} films")
     if not where:
         sys.exit("No films found; not overwriting data.json")
 
@@ -182,18 +182,18 @@ def main():
     if missing := sum(str(mid) not in cache for mid in todo):
         print(f"  ! {missing} films without details this time; they're left out until the next run")
 
-    # First/last seen per film, service and region. Only the services checked
+    # First/last seen per film, platform and region. Only the platforms checked
     # in this run are compared, so --only never marks the others as gone.
     state = read_json("state.json", {})
-    # A service and region seen for the first time is a baseline, not a week of new arrivals.
+    # A platform and region seen for the first time is a baseline, not a week of new arrivals.
     known = {k.split("|", 1)[1] for k in state}
     current = set()
     for mid, svcs in where.items():
-        for service, regions in svcs.items():
+        for platform, regions in svcs.items():
             for r in regions:
-                k = f"{mid}|{service}|{r}"
+                k = f"{mid}|{platform}|{r}"
                 current.add(k)
-                e = state.setdefault(k, {"first": today if f"{service}|{r}" in known else ""})
+                e = state.setdefault(k, {"first": today if f"{platform}|{r}" in known else ""})
                 e["last"] = today
     write_json("state.json", state, indent=0)
 
@@ -208,20 +208,20 @@ def main():
                       "where": {s: sorted(rs, key=lambda r: SIX.index(r) if r in SIX else 99)
                                 for s, rs in svcs.items()}})
 
-    # Titles that left a service in the past 30 days.
+    # Titles that left a platform in the past 30 days.
     month_ago = (dt.date.today() - dt.timedelta(days=30)).isoformat()
     gone = []
     for k, e in state.items():
-        mid, service, region = k.split("|")
-        if f"{service}|{region}" in checked and k not in current and e["last"] >= month_ago:
+        mid, platform, region = k.split("|")
+        if f"{platform}|{region}" in checked and k not in current and e["last"] >= month_ago:
             d = cache.get(mid)
             if d:
-                gone.append({"id": int(mid), "title": d["title"], "year": d["year"], "service": service,
+                gone.append({"id": int(mid), "title": d["title"], "year": d["year"], "platform": platform,
                              "region": region, "last": e["last"]})
 
     write_json("data.json", {
         "generated_at": dt.datetime.now().isoformat(timespec="seconds"),
-        "services": [{"name": s, "regions": r} for s, (_, r) in services.items()],
+        "platforms": [{"name": s, "regions": r} for s, (_, r) in platforms.items()],
         "films": films, "gone": gone,
     })
     print(f"{len(films)} films written to data.json")

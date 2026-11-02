@@ -87,7 +87,7 @@
            transform:rotate(12deg); }
   .newtag { position:absolute; top:10px; left:-6px; z-index:2; background:var(--t); color:#fff8ea; padding:2px 8px;
             font:700 10.5px var(--mono); text-transform:uppercase; letter-spacing:.08em; border:2px solid var(--fg); transform:rotate(-6deg); }
-  /* Services: little stickers. */
+  /* Platforms: little stickers. */
   .where { display:flex; flex-wrap:wrap; gap:5px; margin-top:8px; }
   .where a { text-decoration:none; font:500 10.5px var(--mono); padding:2px 8px; border-radius:999px;
              border:1.5px solid var(--fg); background:var(--card); white-space:nowrap; }
@@ -146,7 +146,7 @@
     <a class="logo" href="./"><img class="mark" src="favicon.svg" alt="">Streaming Movies</a>
     <nav id="tabs">
       <button class="tab active" data-view="movie">Movies</button>
-      <button class="tab" data-view="service">Services</button>
+      <button class="tab" data-view="platform">Platforms</button>
       <button class="tab" data-view="new">New</button>
     </nav>
     <div class="srch" id="srch">
@@ -178,23 +178,23 @@ const SORT_OPTS = [["title","A–Z"], ["pop","Popular"], ["old","Oldest first"],
 const CHUNK = 250;  // rows added per scroll step: the full list runs to thousands
 
 let data = null, tspdt = new Map(), tspdtEdition = "";
-const initialState = () => ({ view:"movie", services:new Set(), regions:new Set(), servicesOpen:false,
+const initialState = () => ({ view:"movie", platforms:new Set(), regions:new Set(), platformsOpen:false,
   yearBuckets:new Set(YEAR_BUCKETS.map(b => b.k)), yearOpen:false, tspdtOnly:false, sort:"title", query:"" });
 const state = initialState();
-const allServices = () => data.services.map(s => s.name);
-const allRegions = () => [...new Set(data.services.flatMap(s => s.regions))];
-function resetFilters(){ state.services = new Set(allServices()); state.regions = new Set(allRegions()); }
+const allPlatforms = () => data.platforms.map(s => s.name);
+const allRegions = () => [...new Set(data.platforms.flatMap(s => s.regions))];
+function resetFilters(){ state.platforms = new Set(allPlatforms()); state.regions = new Set(allRegions()); }
 
 function esc(s){ return String(s == null ? "" : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 function fmtDate(iso){ const [y,m,d] = iso.slice(0,10).split("-").map(Number); return WD[new Date(y,m-1,d).getDay()] + ", " + MO[m-1] + " " + d; }
 const foldTitle = s => (s || "").normalize("NFD").replace(/[^\p{L}\p{N}]/gu, "").toLowerCase();
 const foldText = s => String(s == null ? "" : s).normalize("NFD").replace(/\p{M}/gu, "").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim();
 
-// Where a film streams, narrowed to the selected services and countries.
+// Where a film streams, narrowed to the selected platforms and countries.
 function whereOf(f){
   const out = [];
   for(const [s, rs] of Object.entries(f.where)){
-    if(!state.services.has(s)) continue;
+    if(!state.platforms.has(s)) continue;
     const r = rs.filter(x => state.regions.has(x));
     if(r.length) out.push([s, r]);
   }
@@ -208,7 +208,7 @@ function yearIn(y){
 const rank = f => tspdt.get(f.id);
 
 // Search: every word must match title, original title, director, year,
-// country, genres or a service. A four-digit word is an exact year; "60s" or
+// country, genres or a platform. A four-digit word is an exact year; "60s" or
 // "1960s" a decade.
 let _qWords = [];
 const _hay = new WeakMap();
@@ -231,7 +231,7 @@ function visible(){
   return data.films.filter(f => whereOf(f).length && yearIn(f.year) && (!state.tspdtOnly || rank(f)) && inSearch(f));
 }
 
-// Film row: like a Paris Cinemas film, with the services where its showtimes would be.
+// Film row: like a Paris Cinemas film, with the platforms where its showtimes would be.
 function origTitle(f){ return f.orig && f.lang !== "en" && foldTitle(f.orig) !== foldTitle(f.title) ? f.orig : ""; }
 function metaLine(f){
   const orig = origTitle(f);
@@ -296,11 +296,11 @@ function movieView(){
   _movieIndex = keys.map(k => ({k, has:seen.has(k)}));
   return rows;
 }
-function serviceView(){
+function platformView(){
   const list = visible().sort((a, b) => b.pop - a.pop);
   const out = [];
-  for(const s of data.services){
-    if(!state.services.has(s.name)) continue;
+  for(const s of data.platforms){
+    if(!state.platforms.has(s.name)) continue;
     const films = list.filter(f => whereOf(f).some(([x]) => x === s.name));
     const regions = s.regions.filter(r => state.regions.has(r));
     if(!films.length && (_qWords.length || !regions.length)) continue;
@@ -319,11 +319,11 @@ function newView(){
     for(const f of byDate.get(d).sort((a, b) => b.pop - a.pop)) out.push(filmRow(f));
   }
   if(!out.length) out.push(`<div class="empty">Nothing new yet: tracking started ${fmtDate(data.generated_at)}, so arrivals show up from the next refresh.</div>`);
-  const gone = data.gone.filter(g => state.services.has(g.service) && state.regions.has(g.region))
+  const gone = data.gone.filter(g => state.platforms.has(g.platform) && state.regions.has(g.region))
     .sort((a, b) => b.last.localeCompare(a.last));
   if(gone.length){
     out.push(`<div class="dday">Left in the past month</div>`);
-    for(const g of gone) out.push(`<div class="gone"><b>${esc(g.title)}</b><span>${esc(g.year)}</span><span>${esc(g.service)} ${esc(g.region)}</span></div>`);
+    for(const g of gone) out.push(`<div class="gone"><b>${esc(g.title)}</b><span>${esc(g.year)}</span><span>${esc(g.platform)} ${esc(g.region)}</span></div>`);
   }
   return out;
 }
@@ -341,8 +341,8 @@ function drawMore(upTo){
   const m = viewEl.querySelector(".more"); if(m) moreObs.observe(m);
 }
 function renderView(){
-  const rows = state.view === "service" ? serviceView() : state.view === "new" ? newView() : movieView();
-  const sig = rows.length + ":" + rows.slice(0, 40).join("").length + ":" + state.view + state.sort + [...state.services] + [...state.regions];
+  const rows = state.view === "platform" ? platformView() : state.view === "new" ? newView() : movieView();
+  const sig = rows.length + ":" + rows.slice(0, 40).join("").length + ":" + state.view + state.sort + [...state.platforms] + [...state.regions];
   if(sig === _sig && rows.join("") === _rows.join("")) return;
   _sig = sig; _rows = rows; _shown = 0;
   viewEl.innerHTML = rows.length ? "" : `<div class="empty">${_qWords.length ? `Nothing matches “${esc(state.query.trim())}”.` : "Nothing to show."}</div>`;
@@ -392,8 +392,8 @@ function renderIndex(){
   addEventListener("resize", () => { ix.dataset.sig = ""; if(data) renderIndex(); });
 })();
 
-// --- Controls, as on Paris Cinemas: Services is a collapsible pill like Cinemas, then Year and TSPDT.
-// Collapsed, they share one row; Year drops to its own row once Services opens, and TSPDT once Year opens.
+// --- Controls, as on Paris Cinemas: Platforms is a collapsible pill like Cinemas, then Year and TSPDT.
+// Collapsed, they share one row; Year drops to its own row once Platforms opens, and TSPDT once Year opens.
 // Clicking one item while all are on isolates it; clicking the lone item again flips to all the others.
 function toggleIn(set, all, k){
   if(set.size === all.length) return new Set([k]);
@@ -402,15 +402,15 @@ function toggleIn(set, all, k){
   return s.size ? s : new Set(all);
 }
 function renderControls(){
-  const svc = allServices();
+  const svc = allPlatforms();
   const allYears = state.yearBuckets.size === YEAR_BUCKETS.length;
   const p = (cls, attrs, label, title) => `<button class="pill ${cls}" ${attrs}${title ? ` title="${esc(title)}"` : ""}>${esc(label)}</button>`;
-  const svcBtn = p("all" + (state.services.size === svc.length ? " on" : ""), `data-svcall="1"`, "Services") +
-    (state.servicesOpen ? svc.map(s => p(state.services.has(s) ? "" : "off", `data-s="${esc(s)}"`, s)).join("") : "");
+  const svcBtn = p("all" + (state.platforms.size === svc.length ? " on" : ""), `data-svcall="1"`, "Platforms") +
+    (state.platformsOpen ? svc.map(s => p(state.platforms.has(s) ? "" : "off", `data-s="${esc(s)}"`, s)).join("") : "");
   const tspdtPill = tspdt.size ? p("all" + (state.tspdtOnly ? " on" : ""), `data-tspdt="1"`, "TSPDT", "Only films in TSPDT's 1,000 Greatest Films, with their rank") : "";
   const yearBtn = p("all" + (allYears ? " on" : ""), `data-yall="1"`, "Year") +
     (state.yearOpen ? YEAR_BUCKETS.map(b => p(state.yearBuckets.has(b.k) ? "" : "off", `data-y="${b.k}"`, b.label)).join("") : tspdtPill);
-  const rows = state.servicesOpen ? [svcBtn, yearBtn] : [svcBtn + yearBtn];
+  const rows = state.platformsOpen ? [svcBtn, yearBtn] : [svcBtn + yearBtn];
   if(state.yearOpen && tspdtPill) rows.push(tspdtPill);
   const sortSel = state.view === "movie" ? `<select id="sort" class="sel" aria-label="Sort movies">` +
     SORT_OPTS.filter(([v]) => v !== "tspdt" || tspdt.size).map(([v, l]) => `<option value="${v}">${l}</option>`).join("") + `</select>` : "";
@@ -422,8 +422,8 @@ function renderControls(){
   c.onclick = e => {
     const b = e.target.closest(".pill"); if(!b) return;
     const d = b.dataset;
-    if(d.svcall){ state.servicesOpen = !state.servicesOpen; if(!state.servicesOpen) state.services = new Set(svc); }
-    else if(d.s) state.services = toggleIn(state.services, svc, d.s);
+    if(d.svcall){ state.platformsOpen = !state.platformsOpen; if(!state.platformsOpen) state.platforms = new Set(svc); }
+    else if(d.s) state.platforms = toggleIn(state.platforms, svc, d.s);
     else if(d.yall){ state.yearOpen = !state.yearOpen; if(!state.yearOpen) state.yearBuckets = new Set(YEAR_BUCKETS.map(b => b.k)); }
     else if(d.y) state.yearBuckets = toggleIn(state.yearBuckets, YEAR_BUCKETS.map(b => b.k), d.y);
     else if(d.tspdt){ state.tspdtOnly = !state.tspdtOnly; if(!state.tspdtOnly && state.sort === "tspdt") state.sort = "title"; }
