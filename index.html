@@ -55,7 +55,6 @@
   .pill.off { color:var(--muted); border-color:var(--faint); background:transparent; }
   .pill.all { font-weight:700; text-transform:uppercase; letter-spacing:.06em; }
   .pill.all.on { background:var(--o); color:#fff8ea; }
-  .pill.blue.on { background:var(--t); color:#fff8ea; }
   .pill[data-tspdt].on { background:var(--y); color:#3b1f12; }
   .sels { margin-left:auto; }
   body:has(#mindex.on) .controls { padding-right:var(--idxw,0px); }
@@ -177,7 +176,7 @@ const SORT_OPTS = [["title","A–Z"], ["pop","Popular"], ["old","Oldest first"],
 const CHUNK = 250;  // rows added per scroll step: the full list runs to thousands
 
 let data = null, tspdt = new Map(), tspdtEdition = "";
-const initialState = () => ({ view:"movie", services:new Set(), regions:new Set(), servicesOpen:false, regionsOpen:false,
+const initialState = () => ({ view:"movie", services:new Set(), regions:new Set(), servicesOpen:false,
   yearBuckets:new Set(YEAR_BUCKETS.map(b => b.k)), yearOpen:false, tspdtOnly:false, sort:"title", query:"" });
 const state = initialState();
 const allServices = () => data.services.map(s => s.name);
@@ -391,7 +390,8 @@ function renderIndex(){
   addEventListener("resize", () => { ix.dataset.sig = ""; if(data) renderIndex(); });
 })();
 
-// --- Controls: Services and Countries are collapsible pills like Cinemas; Year and TSPDT as on Paris Cinemas. ---
+// --- Controls, as on Paris Cinemas: Services is a collapsible pill like Cinemas, then Year and TSPDT.
+// Collapsed, they share one row; Year drops to its own row once Services opens, and TSPDT once Year opens.
 // Clicking one item while all are on isolates it; clicking the lone item again flips to all the others.
 function toggleIn(set, all, k){
   if(set.size === all.length) return new Set([k]);
@@ -400,21 +400,21 @@ function toggleIn(set, all, k){
   return s.size ? s : new Set(all);
 }
 function renderControls(){
-  const svc = allServices(), reg = allRegions();
+  const svc = allServices();
   const allYears = state.yearBuckets.size === YEAR_BUCKETS.length;
   const p = (cls, attrs, label, title) => `<button class="pill ${cls}" ${attrs}${title ? ` title="${esc(title)}"` : ""}>${esc(label)}</button>`;
-  let row1 = p("all" + (state.services.size === svc.length ? " on" : ""), `data-svcall="1"`, "Services");
-  if(state.servicesOpen) row1 += svc.map(s => p(state.services.has(s) ? "" : "off", `data-s="${esc(s)}"`, s)).join("");
-  let row2 = reg.length > 1 ? p("all blue" + (state.regions.size === reg.length ? " on" : ""), `data-regall="1"`, "Countries") : "";
-  if(state.regionsOpen) row2 += reg.map(r => p(state.regions.has(r) ? "" : "off", `data-r="${r}"`, r, REGION_NAMES[r])).join("");
-  let row3 = p("all" + (allYears ? " on" : ""), `data-yall="1"`, "Year");
-  if(state.yearOpen) row3 += YEAR_BUCKETS.map(b => p(state.yearBuckets.has(b.k) ? "" : "off", `data-y="${b.k}"`, b.label)).join("");
-  if(tspdt.size) row3 += p("all" + (state.tspdtOnly ? " on" : ""), `data-tspdt="1"`, "TSPDT", "Only films in TSPDT's 1,000 Greatest Films, with their rank");
+  const svcBtn = p("all" + (state.services.size === svc.length ? " on" : ""), `data-svcall="1"`, "Services") +
+    (state.servicesOpen ? svc.map(s => p(state.services.has(s) ? "" : "off", `data-s="${esc(s)}"`, s)).join("") : "");
+  const tspdtPill = tspdt.size ? p("all" + (state.tspdtOnly ? " on" : ""), `data-tspdt="1"`, "TSPDT", "Only films in TSPDT's 1,000 Greatest Films, with their rank") : "";
+  const yearBtn = p("all" + (allYears ? " on" : ""), `data-yall="1"`, "Year") +
+    (state.yearOpen ? YEAR_BUCKETS.map(b => p(state.yearBuckets.has(b.k) ? "" : "off", `data-y="${b.k}"`, b.label)).join("") : tspdtPill);
+  const rows = state.servicesOpen ? [svcBtn, yearBtn] : [svcBtn + yearBtn];
+  if(state.yearOpen && tspdtPill) rows.push(tspdtPill);
   const sortSel = state.view === "movie" ? `<select id="sort" class="sel" aria-label="Sort movies">` +
     SORT_OPTS.filter(([v]) => v !== "tspdt" || tspdt.size).map(([v, l]) => `<option value="${v}">${l}</option>`).join("") + `</select>` : "";
+  rows[rows.length - 1] += `<div class="sels">${sortSel}</div>`;
   const c = document.getElementById("controls");
-  c.innerHTML = `<div class="pills">${row1}</div>` + (row2 ? `<div class="pills">${row2}</div>` : "") +
-    `<div class="pills">${row3}<div class="sels">${sortSel}</div></div>`;
+  c.innerHTML = rows.map(r => `<div class="pills">${r}</div>`).join("");
   const sel = c.querySelector("#sort");
   if(sel){ sel.value = state.sort; sel.onchange = () => { state.sort = sel.value; renderAll(); scrollTo(0, 0); }; }
   c.onclick = e => {
@@ -422,8 +422,6 @@ function renderControls(){
     const d = b.dataset;
     if(d.svcall){ state.servicesOpen = !state.servicesOpen; if(!state.servicesOpen) state.services = new Set(svc); }
     else if(d.s) state.services = toggleIn(state.services, svc, d.s);
-    else if(d.regall){ state.regionsOpen = !state.regionsOpen; if(!state.regionsOpen) state.regions = new Set(reg); }
-    else if(d.r) state.regions = toggleIn(state.regions, reg, d.r);
     else if(d.yall){ state.yearOpen = !state.yearOpen; if(!state.yearOpen) state.yearBuckets = new Set(YEAR_BUCKETS.map(b => b.k)); }
     else if(d.y) state.yearBuckets = toggleIn(state.yearBuckets, YEAR_BUCKETS.map(b => b.k), d.y);
     else if(d.tspdt){ state.tspdtOnly = !state.tspdtOnly; if(!state.tspdtOnly && state.sort === "tspdt") state.sort = "title"; }
