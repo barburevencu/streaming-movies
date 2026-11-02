@@ -1,7 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect x="2" y="2" width="60" height="60" rx="15" fill="#f1ece0" stroke="#1b1a17" stroke-width="3"/>
-  <g style="mix-blend-mode:multiply">
-    <circle cx="26" cy="34" r="14.5" fill="#ff2e8a"/>
-    <circle cx="39" cy="30" r="14.5" fill="#0047ff"/>
+  <!-- Play button filled with the site's four 70s stripes. -->
+  <defs>
+    <clipPath id="tri"><path d="M21 13 Q18 11.5 18 15 V49 Q18 52.5 21 51 L50 34.6 Q53 32 50 29.4 Z"/></clipPath>
+  </defs>
+  <rect x="2" y="2" width="60" height="60" rx="15" fill="#f6ead2" stroke="#3b1f12" stroke-width="3"/>
+  <g clip-path="url(#tri)">
+    <rect x="10" y="10" width="46" height="11" fill="#3b1f12"/>
+    <rect x="10" y="21" width="46" height="11" fill="#e5532d"/>
+    <rect x="10" y="32" width="46" height="11" fill="#f2a93b"/>
+    <rect x="10" y="43" width="46" height="11" fill="#1f8a84"/>
   </g>
+  <path d="M21 13 Q18 11.5 18 15 V49 Q18 52.5 21 51 L50 34.6 Q53 32 50 29.4 Z" fill="none" stroke="#3b1f12" stroke-width="3" stroke-linejoin="round"/>
 </svg>

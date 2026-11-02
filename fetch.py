@@ -34,11 +34,11 @@ SIX = ["RO", "US", "GB", "IT", "DE", "FR"]
 SERVICES = {
     "Criterion": (["Criterion Channel"], ["US"]),
     "Mubi": (["MUBI"], SIX),
-    "Netflix": (["Netflix"], SIX),
-    "HBO Max": (["HBO Max", "Max"], ["RO"]),
-    "Disney+": (["Disney Plus", "Disney+"], SIX),
-    "Apple TV+": (["Apple TV Plus", "Apple TV+", "Apple TV"], ["US"]),  # "Apple TV" since the 2025 rename; the store is "Apple TV Store"
     "Kanopy": (["Kanopy"], ["US"]),
+    "HBO Max": (["HBO Max", "Max"], ["RO"]),
+    "Apple TV": (["Apple TV", "Apple TV Plus", "Apple TV+"], ["US"]),  # the subscription; the store is "Apple TV Store"
+    "Netflix": (["Netflix"], SIX),
+    "Disney": (["Disney Plus", "Disney+"], SIX),
 }
 
 TMDB_API = "https://api.themoviedb.org/3"
