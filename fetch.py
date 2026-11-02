@@ -131,6 +131,17 @@ def details(mid):
     }
 
 
+def slim(f):
+    """A film as data.json stores it: small enough for a phone. The site builds the
+    Letterboxd link from the id and the poster URL from its path, and an empty
+    field or an original title equal to the title is left out."""
+    f = {k: v for k, v in f.items() if k not in ("lb", "pop")}
+    f["poster"] = f.get("poster", "").removeprefix(POSTER)
+    if f.get("orig") == f.get("title"):
+        f["orig"] = ""
+    return {k: v for k, v in f.items() if v != ""}
+
+
 def read_json(name, default):
     p = HERE / name
     return json.loads(p.read_text()) if p.exists() else default
@@ -203,10 +214,9 @@ def main():
         if not d:
             continue
         added = max(state[f"{mid}|{s}|{r}"]["first"] for s, rs in svcs.items() for r in rs)
-        films.append({"id": mid, **d, "pop": round(pop[mid], 2), "added": added,
-                      "lb": f"https://letterboxd.com/tmdb/{mid}/",
-                      "where": {s: sorted(rs, key=lambda r: SIX.index(r) if r in SIX else 99)
-                                for s, rs in svcs.items()}})
+        films.append(slim({"id": mid, **d, "added": added,
+                           "where": {s: sorted(rs, key=lambda r: SIX.index(r) if r in SIX else 99)
+                                     for s, rs in svcs.items()}}))
 
     # Titles that left a platform in the past 30 days.
     month_ago = (dt.date.today() - dt.timedelta(days=30)).isoformat()
@@ -223,7 +233,7 @@ def main():
         "generated_at": dt.datetime.now().isoformat(timespec="seconds"),
         "platforms": [{"name": s, "regions": r} for s, (_, r) in platforms.items()],
         "films": films, "gone": gone,
-    })
+    }, separators=(",", ":"))
     print(f"{len(films)} films written to data.json")
 
 
