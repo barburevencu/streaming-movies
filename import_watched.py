@@ -53,17 +53,32 @@ def read_rows(path):
 def match(row):
     """TMDB id for a Letterboxd title and year: an exact title wins over the top hit."""
     name, year = row["Name"], row.get("Year") or ""
-    # Long titles are punctuated differently across sites, so the part before a comma or colon is a last try.
-    queries = [name] + ([re.split(r"[,:]", name)[0]] if re.search(r"[,:]", name) else [])
-    for query in queries:
-        for params in ([{"primary_release_year": year}, {"year": year}] if year else []) + ([{}] if query == name else []):
-            try:
-                res = (fetch.tmdb_get("/search/movie", query=query, include_adult="false", **params) or {}).get("results", [])
-            except RuntimeError:
-                return None
-            if res:
-                exact = [m for m in res if fold(name) in (fold(m.get("title")), fold(m.get("original_title")))]
-                return (exact or res)[0]["id"]
+    search = lambda query, **params: (fetch.tmdb_get("/search/movie", query=query, include_adult="false", **params) or {}).get("results", [])
+    near = lambda m: year and (m.get("release_date") or "")[:4] and abs(int(m["release_date"][:4]) - int(year)) <= 1
+    try:
+        # Letterboxd and TMDB often date a film a year apart, so look a year either side; among films
+        # with the exact title from then, the most voted wins (an obscure namesake can sit in the exact year).
+        found = {}
+        for params in ([{"primary_release_year": int(year) + d} for d in (0, -1, 1)] if year else []) + [{}]:
+            for m in search(name, **params):
+                found.setdefault(m["id"], m)
+        exact = [m for m in found.values() if fold(name) in (fold(m.get("title")), fold(m.get("original_title")))]
+        if best := [m for m in exact if near(m)] or (exact if not year else []):
+            return max(best, key=lambda m: m.get("vote_count") or 0)["id"]
+        for params in ([{"primary_release_year": year}] if year else []) + [{}]:
+            if res := search(name, **params):
+                return res[0]["id"]
+        # Long titles are punctuated differently across sites, so the part before a comma or colon is a last
+        # try; only a title that starts with it, from within a year (sites disagree on those too), counts.
+        if not (re.search(r"[,:]", name) and year):
+            return None
+        short = re.split(r"[,:]", name)[0]
+        for m in search(short):
+            y = (m.get("release_date") or "")[:4]
+            if y and abs(int(y) - int(year)) <= 1 and any(fold(t).startswith(fold(short)) for t in (m.get("title"), m.get("original_title"))):
+                return m["id"]
+    except RuntimeError:
+        pass
     return None
 
 
