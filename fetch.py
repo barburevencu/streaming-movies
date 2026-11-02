@@ -41,6 +41,8 @@ PLATFORMS = {
     "Disney": (["Disney Plus", "Disney+"], SIX),
 }
 
+AWAY = 30  # days a film must be off the site to count as new when it returns
+
 TMDB_API = "https://api.themoviedb.org/3"
 POSTER = "https://image.tmdb.org/t/p/w185"
 COUNTRY_SHORT = {"United States of America": "USA", "United Kingdom": "UK",
@@ -153,6 +155,41 @@ def write_json(name, obj, **kw):
     tmp.replace(HERE / name)
 
 
+def track(state, where, today):
+    """Update state.json's first/last seen per film, platform and region with this run's
+    availability; return the keys seen now and the date each film counts as added.
+
+    A film is new when the site first shows it: its earliest first-seen date on any platform and
+    region, including ones it has since left. One a platform newly brings in isn't new if it was
+    already on another, and a baseline entry (an empty date) means it was there from the start.
+    A film back after more than AWAY days off the site is new again: all its first dates restart."""
+    # A platform and region seen for the first time is a baseline, not a week of new arrivals.
+    known = {k.split("|", 1)[1] for k in state}
+    last_seen = {}
+    for k, e in state.items():
+        mid = int(k.split("|", 1)[0])
+        last_seen[mid] = max(last_seen.get(mid, ""), e.get("last", ""))
+    away = (dt.date.fromisoformat(today) - dt.timedelta(days=AWAY)).isoformat()
+    current = set()
+    for mid, svcs in where.items():
+        for platform, regions in svcs.items():
+            for r in regions:
+                k = f"{mid}|{platform}|{r}"
+                current.add(k)
+                e = state.setdefault(k, {"first": today if f"{platform}|{r}" in known else ""})
+                e["last"] = today
+    returned = {mid for mid in where if mid in last_seen and last_seen[mid] < away}
+    for k, e in state.items():
+        if int(k.split("|", 1)[0]) in returned:
+            e["first"] = today
+
+    added = {}
+    for k, e in state.items():
+        mid = int(k.split("|", 1)[0])
+        added[mid] = min(added.get(mid, e["first"]), e["first"])
+    return current, added
+
+
 def main():
     global KEY
     ap = argparse.ArgumentParser()
@@ -193,28 +230,9 @@ def main():
     if missing := sum(str(mid) not in cache for mid in todo):
         print(f"  ! {missing} films without details this time; they're left out until the next run")
 
-    # First/last seen per film, platform and region. Only the platforms checked
-    # in this run are compared, so --only never marks the others as gone.
     state = read_json("state.json", {})
-    # A platform and region seen for the first time is a baseline, not a week of new arrivals.
-    known = {k.split("|", 1)[1] for k in state}
-    current = set()
-    for mid, svcs in where.items():
-        for platform, regions in svcs.items():
-            for r in regions:
-                k = f"{mid}|{platform}|{r}"
-                current.add(k)
-                e = state.setdefault(k, {"first": today if f"{platform}|{r}" in known else ""})
-                e["last"] = today
+    current, added = track(state, where, today)
     write_json("state.json", state, indent=0)
-
-    # A film is new when the site first shows it: its earliest first-seen date on any platform and
-    # region, including ones it has since left. One a platform newly brings in isn't new if it was
-    # already on another, and a baseline entry (an empty date) means it was there from the start.
-    added = {}
-    for k, e in state.items():
-        mid = int(k.split("|", 1)[0])
-        added[mid] = min(added.get(mid, e["first"]), e["first"])
 
     films = []
     for mid, svcs in where.items():
@@ -225,7 +243,8 @@ def main():
                            "where": {s: sorted(rs, key=lambda r: SIX.index(r) if r in SIX else 99)
                                      for s, rs in svcs.items()}}))
 
-    # Titles that left a platform in the past 30 days.
+    # Titles that left a platform in the past 30 days. Only the platforms checked
+    # in this run are compared, so --only never marks the others as gone.
     month_ago = (dt.date.today() - dt.timedelta(days=30)).isoformat()
     gone = []
     for k, e in state.items():
