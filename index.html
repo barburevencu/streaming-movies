@@ -75,7 +75,8 @@
   .film:hover .poster { transform:rotate(-2deg) translate(-2px,-3px); box-shadow:9px 9px 0 var(--shadow); }
   .film:nth-child(even):hover .poster { transform:rotate(2deg) translate(-2px,-3px); }
   .info { padding:12px 2px 0; min-width:0; }
-  .ti { font:800 16px/1.15 var(--title); font-variation-settings:"SOFT" 100, "WONK" 1; letter-spacing:-.01em; }
+  .ti { font:800 16px/1.15 var(--title); font-variation-settings:"SOFT" 100, "WONK" 1; letter-spacing:-.01em;
+        overflow-wrap:break-word; }  /* a safety net under breakable() */
   .ti a { text-decoration:none; }
   .ti a:hover { color:var(--accent-text); }
   .by { color:var(--muted); font-size:11.5px; line-height:1.5; margin-top:3px; }
@@ -254,11 +255,14 @@ function posterImg(f){
   if(!f.poster) return `<span class="poster"></span>`;
   return `<img class="poster" src="${esc(f.poster.replace("/w185/", "/w342/"))}" alt="" loading="lazy" decoding="async">`;
 }
+// Soft hyphens every few letters in very long words, so a title like Symbiopsychotaxiplasm
+// wraps with a hyphen at the last spot that fits rather than overflowing the card.
+const breakable = t => t.replace(/\p{L}{14,}/gu, w => [...w].map((c, i) => i >= 4 && i <= w.length - 4 && i % 3 === 0 ? "\u00AD" + c : c).join(""));
 function filmRow(f, opts = {}){
   const w = whereOf(f).filter(([s]) => !opts.only || s === opts.only);
   const tag = opts.newTag && f.added && f.added >= weekAgo() ? `<span class="newtag">new</span>` : "";
   return `<div class="film"${opts.ig ? ` data-ig="${esc(opts.ig)}"` : ""}>${posterImg(f)}<div class="info">
-    <div class="ti"><a href="${esc(f.lb)}" target="_blank" rel="noopener">${esc(f.title)}</a>${badge(f)}${tag}</div>
+    <div class="ti"><a href="${esc(f.lb)}" target="_blank" rel="noopener">${esc(breakable(f.title))}</a>${badge(f)}${tag}</div>
     <div class="by">${metaLine(f)}</div>
     ${detailLine(f) ? `<div class="by mdet">${esc(detailLine(f))}</div>` : ""}</div>
     <div class="where">${w.map(([s, rs]) =>
