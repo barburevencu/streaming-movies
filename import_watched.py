@@ -1,0 +1,118 @@
+#!/usr/bin/env python3
+"""Turn a Letterboxd data export into watched.json, for the site's Watched pill.
+
+Export from letterboxd.com → Settings → Data → Export your data, then point this
+at the downloaded zip (or its watched.csv). Each film is matched to its TMDB id
+by title and year through the TMDB search API; matches are kept in watched.json,
+so a re-import only looks up films logged since.
+
+With --rss it instead adds the films in the user's diary feed (the latest 50
+entries, which carry their TMDB ids) to watched.json. The weekly refresh does
+this, so the export is only needed once, for the backlog. Films marked watched
+without a diary entry never reach the feed; a fresh export picks those up.
+
+Usage: python3 import_watched.py ~/Downloads/letterboxd-USER-....zip
+       python3 import_watched.py --rss [username]
+"""
+
+import csv
+import datetime as dt
+import io
+import json
+import re
+import sys
+import unicodedata
+import urllib.request
+import zipfile
+from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
+
+import fetch
+
+HERE = Path(__file__).resolve().parent
+USER = "barburevencu"
+
+
+def fold(s):
+    s = unicodedata.normalize("NFD", s or "")
+    return "".join(c for c in s if c.isalnum()).lower()
+
+
+def read_rows(path):
+    p = Path(path).expanduser()
+    if p.suffix == ".zip":
+        with zipfile.ZipFile(p) as z:
+            text = z.read("watched.csv").decode("utf-8-sig")
+    else:
+        text = (p / "watched.csv" if p.is_dir() else p).read_text(encoding="utf-8-sig")
+    return list(csv.DictReader(io.StringIO(text)))
+
+
+def match(row):
+    """TMDB id for a Letterboxd title and year: an exact title wins over the top hit."""
+    name, year = row["Name"], row.get("Year") or ""
+    # Long titles are punctuated differently across sites, so the part before a comma or colon is a last try.
+    queries = [name] + ([re.split(r"[,:]", name)[0]] if re.search(r"[,:]", name) else [])
+    for query in queries:
+        for params in ([{"primary_release_year": year}, {"year": year}] if year else []) + ([{}] if query == name else []):
+            try:
+                res = (fetch.tmdb_get("/search/movie", query=query, include_adult="false", **params) or {}).get("results", [])
+            except RuntimeError:
+                return None
+            if res:
+                exact = [m for m in res if fold(name) in (fold(m.get("title")), fold(m.get("original_title")))]
+                return (exact or res)[0]["id"]
+    return None
+
+
+def save(films):
+    fetch.write_json("watched.json", {"generated_at": dt.datetime.now().isoformat(timespec="seconds"), "films": films}, indent=0)
+
+
+def from_rss(user):
+    """Add the diary feed's films to watched.json, keyed rss:<slug>."""
+    req = urllib.request.Request(f"https://letterboxd.com/{user}/rss/",
+                                 headers={"User-Agent": "streaming-movies (github.com/barburevencu/streaming-movies)"})
+    with urllib.request.urlopen(req, timeout=30) as resp:
+        xml = resp.read().decode("utf-8", "replace")
+    out = HERE / "watched.json"
+    films = json.loads(out.read_text())["films"] if out.exists() else {}
+    ids = set(films.values())
+    new = 0
+    for item in re.findall(r"<item>(.*?)</item>", xml, re.S):
+        slug = re.search(r"<link>[^<]*/film/([^/<]+)/", item)
+        mid = re.search(r"<tmdb:movieId>(\d+)</tmdb:movieId>", item)
+        if slug and mid:  # list entries have neither
+            new += int(mid.group(1)) not in ids
+            ids.add(int(mid.group(1)))
+            films.setdefault("rss:" + slug.group(1), int(mid.group(1)))
+    save(films)
+    print(f"{new} films added to watched.json from {user}'s diary feed; {len(ids - {None})} watched in all")
+
+
+def main():
+    if len(sys.argv) < 2:
+        sys.exit(__doc__)
+    if sys.argv[1] == "--rss":
+        return from_rss(sys.argv[2] if len(sys.argv) > 2 else USER)
+    rows = read_rows(sys.argv[1])
+    if not rows:
+        sys.exit("No films in watched.csv; not overwriting watched.json")
+    fetch.KEY = fetch.load_key()
+
+    out = HERE / "watched.json"
+    known = json.loads(out.read_text())["films"] if out.exists() else {}
+    todo = [r for r in rows if known.get(r["Letterboxd URI"]) is None]
+    print(f"  {len(todo)} new of {len(rows)} watched films")
+    with ThreadPoolExecutor(4) as pool:
+        for r, mid in zip(todo, pool.map(match, todo)):
+            known[r["Letterboxd URI"]] = mid
+
+    films = {r["Letterboxd URI"]: known.get(r["Letterboxd URI"]) for r in rows}
+    save(films)
+    missing = [r["Name"] for r in rows if films[r["Letterboxd URI"]] is None]
+    print(f"{len(films)} watched films written to watched.json; {len(missing)} without a TMDB match: {missing[:20]}")
+
+
+if __name__ == "__main__":
+    main()

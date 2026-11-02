@@ -57,6 +57,7 @@
   .pill.all { font-weight:700; text-transform:uppercase; letter-spacing:.06em; }
   .pill.all.on { background:var(--o); color:#fff8ea; }
   .pill[data-tspdt].on { background:var(--y); color:#3b1f12; }
+  .pill[data-watched].on { background:var(--t); color:#fff8ea; }
   .sels { margin-left:auto; }
   body:has(#mindex.on) .controls { padding-right:var(--idxw,0px); }
   .sel { font:500 12px var(--mono); border:2px solid var(--fg); border-radius:999px; padding:5px 10px; background:var(--card); color:var(--fg); cursor:pointer; }
@@ -177,9 +178,9 @@ const YEAR_BUCKETS = [
 const SORT_OPTS = [["title","A–Z"], ["pop","Popular"], ["old","Oldest first"], ["new","Newest first"], ["tspdt","TSPDT rank"]];
 const CHUNK = 250;  // rows added per scroll step: the full list runs to thousands
 
-let data = null, tspdt = new Map(), tspdtEdition = "";
+let data = null, tspdt = new Map(), tspdtEdition = "", watched = new Set();
 const initialState = () => ({ view:"movie", platforms:new Set(), regions:new Set(), platformsOpen:false,
-  yearBuckets:new Set(YEAR_BUCKETS.map(b => b.k)), yearOpen:false, tspdtOnly:false, sort:"title", query:"" });
+  yearBuckets:new Set(YEAR_BUCKETS.map(b => b.k)), yearOpen:false, tspdtOnly:false, hideWatched:false, sort:"title", query:"" });
 const state = initialState();
 const allPlatforms = () => data.platforms.map(s => s.name);
 const allRegions = () => [...new Set(data.platforms.flatMap(s => s.regions))];
@@ -228,7 +229,7 @@ function inSearch(f){
   return _qWords.every(w => /^\d{4}$/.test(w) ? f.year === w : h.includes(w));
 }
 function visible(){
-  return data.films.filter(f => whereOf(f).length && yearIn(f.year) && (!state.tspdtOnly || rank(f)) && inSearch(f));
+  return data.films.filter(f => whereOf(f).length && yearIn(f.year) && (!state.tspdtOnly || rank(f)) && !(state.hideWatched && watched.has(f.id)) && inSearch(f));
 }
 
 // Film row: like a Paris Cinemas film, with the platforms where its showtimes would be.
@@ -392,8 +393,8 @@ function renderIndex(){
   addEventListener("resize", () => { ix.dataset.sig = ""; if(data) renderIndex(); });
 })();
 
-// --- Controls, as on Paris Cinemas: Platforms is a collapsible pill like Cinemas, then Year and TSPDT.
-// Collapsed, they share one row; Year drops to its own row once Platforms opens, and TSPDT once Year opens.
+// --- Controls, as on Paris Cinemas: Platforms is a collapsible pill like Cinemas, then Year, TSPDT and Unseen.
+// Collapsed, they share one row; Year drops to its own row once Platforms opens, and TSPDT and Unseen once Year opens.
 // Clicking one item while all are on isolates it; clicking the lone item again flips to all the others.
 function toggleIn(set, all, k){
   if(set.size === all.length) return new Set([k]);
@@ -407,7 +408,8 @@ function renderControls(){
   const p = (cls, attrs, label, title) => `<button class="pill ${cls}" ${attrs}${title ? ` title="${esc(title)}"` : ""}>${esc(label)}</button>`;
   const svcBtn = p("all" + (state.platforms.size === svc.length ? " on" : ""), `data-svcall="1"`, "Platforms") +
     (state.platformsOpen ? svc.map(s => p(state.platforms.has(s) ? "" : "off", `data-s="${esc(s)}"`, s)).join("") : "");
-  const tspdtPill = tspdt.size ? p("all" + (state.tspdtOnly ? " on" : ""), `data-tspdt="1"`, "TSPDT", "Only films in TSPDT's 1,000 Greatest Films, with their rank") : "";
+  const tspdtPill = (tspdt.size ? p("all" + (state.tspdtOnly ? " on" : ""), `data-tspdt="1"`, "TSPDT", "Only films in TSPDT's 1,000 Greatest Films, with their rank") : "") +
+    (watched.size ? p("all" + (state.hideWatched ? " on" : ""), `data-watched="1"`, "Unseen", "Only films I haven't watched on Letterboxd") : "");
   const yearBtn = p("all" + (allYears ? " on" : ""), `data-yall="1"`, "Year") +
     (state.yearOpen ? YEAR_BUCKETS.map(b => p(state.yearBuckets.has(b.k) ? "" : "off", `data-y="${b.k}"`, b.label)).join("") : tspdtPill);
   const rows = state.platformsOpen ? [svcBtn, yearBtn] : [svcBtn + yearBtn];
@@ -427,6 +429,7 @@ function renderControls(){
     else if(d.yall){ state.yearOpen = !state.yearOpen; if(!state.yearOpen) state.yearBuckets = new Set(YEAR_BUCKETS.map(b => b.k)); }
     else if(d.y) state.yearBuckets = toggleIn(state.yearBuckets, YEAR_BUCKETS.map(b => b.k), d.y);
     else if(d.tspdt){ state.tspdtOnly = !state.tspdtOnly; if(!state.tspdtOnly && state.sort === "tspdt") state.sort = "title"; }
+    else if(d.watched) state.hideWatched = !state.hideWatched;
     renderAll();
   };
 }
@@ -509,11 +512,13 @@ document.addEventListener("keydown", e => { if(e.key === "Escape") closeLightbox
 
 async function load(){
   try {
-    const [d, t] = await Promise.all([
+    const [d, t, w] = await Promise.all([
       fetch("data.json", {cache:"no-store"}).then(r => r.json()),
-      fetch("tspdt.json").then(r => r.json()).catch(() => null)]);
+      fetch("tspdt.json").then(r => r.json()).catch(() => null),
+      fetch("watched.json", {cache:"no-store"}).then(r => r.json()).catch(() => null)]);
     data = d;
     if(t){ t.tmdb.forEach((id, i) => { if(id && !tspdt.has(id)) tspdt.set(id, i + 1); }); tspdtEdition = t.edition || ""; }
+    if(w) watched = new Set(Object.values(w.films).filter(Boolean));
   } catch(e) { viewEl.innerHTML = `<div class="note">Could not load data.json.</div>`; return; }
   resetFilters();
   renderAll();

@@ -35,19 +35,29 @@ jobs:
           TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
         run: python3 fetch.py
 
+      # New diary entries from Letterboxd, for the Watched pill. Not worth
+      # failing the refresh over if Letterboxd is down or turns us away.
+      - name: Fetch watched films
+        if: github.event_name != 'push'
+        continue-on-error: true
+        run: python3 import_watched.py --rss
+
       # cache.json (film details) and state.json (first/last seen) carry over
       # between runs, so they're committed along with the site's data.
+      # watched.json is listed only when present, so git add doesn't fail without it.
       - name: Commit refreshed data
         if: github.event_name != 'push'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
-          git add data.json cache.json state.json
+          git add data.json cache.json state.json $(ls watched.json 2>/dev/null)
           git diff --cached --quiet || git commit -m "Update catalogs $(date +%F)"
           git push
 
       - name: Prepare site
-        run: mkdir _site && cp index.html data.json tspdt.json favicon.svg _site/
+        run: |
+          mkdir _site && cp index.html data.json tspdt.json favicon.svg _site/
+          if [ -f watched.json ]; then cp watched.json _site/; fi
 
       - uses: actions/upload-pages-artifact@v3
         with:
