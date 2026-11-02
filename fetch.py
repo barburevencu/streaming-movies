@@ -185,14 +185,15 @@ def main():
     # First/last seen per film, service and region. Only the services checked
     # in this run are compared, so --only never marks the others as gone.
     state = read_json("state.json", {})
-    first_run = not any(k.split("|", 1)[1] in checked for k in state)
+    # A service and region seen for the first time is a baseline, not a week of new arrivals.
+    known = {k.split("|", 1)[1] for k in state}
     current = set()
     for mid, svcs in where.items():
         for service, regions in svcs.items():
             for r in regions:
                 k = f"{mid}|{service}|{r}"
                 current.add(k)
-                e = state.setdefault(k, {"first": "" if first_run else today})
+                e = state.setdefault(k, {"first": today if f"{service}|{r}" in known else ""})
                 e["last"] = today
     write_json("state.json", state, indent=0)
 
