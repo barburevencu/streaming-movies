@@ -51,6 +51,8 @@ jobs:
       # cache.json (film details) and state.json (first/last seen) carry over
       # between runs, so they're committed along with the site's data.
       # watched.json and watchlist.json are listed only when present, so git add doesn't fail without them.
+      # Anything pushed to main during the run (code, or another run's data) is pulled in first; where
+      # both touched the same data file, this run's fresher fetch wins.
       - name: Commit refreshed data
         if: github.event_name != 'push'
         run: |
@@ -58,6 +60,7 @@ jobs:
           git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
           git add data.json cache.json state.json $(ls watched.json watchlist.json 2>/dev/null)
           git diff --cached --quiet || git commit -m "Update catalogs $(date +%F)"
+          git pull --rebase -X theirs
           git push
 
       - name: Prepare site
