@@ -208,13 +208,20 @@ def main():
                 e["last"] = today
     write_json("state.json", state, indent=0)
 
+    # A film is new when the site first shows it: its earliest first-seen date on any platform and
+    # region, including ones it has since left. One a platform newly brings in isn't new if it was
+    # already on another, and a baseline entry (an empty date) means it was there from the start.
+    added = {}
+    for k, e in state.items():
+        mid = int(k.split("|", 1)[0])
+        added[mid] = min(added.get(mid, e["first"]), e["first"])
+
     films = []
     for mid, svcs in where.items():
         d = cache.get(str(mid))
         if not d:
             continue
-        added = max(state[f"{mid}|{s}|{r}"]["first"] for s, rs in svcs.items() for r in rs)
-        films.append(slim({"id": mid, **d, "added": added,
+        films.append(slim({"id": mid, **d, "added": added[mid],
                            "where": {s: sorted(rs, key=lambda r: SIX.index(r) if r in SIX else 99)
                                      for s, rs in svcs.items()}}))
 
