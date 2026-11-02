@@ -192,7 +192,7 @@ const YEAR_BUCKETS = [
   { k:"recent", label:"21st century", test:y => y >= 2000 && y <= NOW_YEAR - 2 },
   { k:"old",    label:"20th century", test:y => y < 2000 },
 ];
-const SORT_OPTS = [["top","Top rated"], ["tspdt","TSPDT rank"], ["title","A–Z"], ["old","Oldest first"], ["new","Newest first"], ["added","Newly added"]];
+const SORT_OPTS = [["top","Top rated"], ["tspdt","TSPDT rank"], ["added","Newly added"], ["title","A–Z"], ["old","Oldest first"], ["new","Newest first"]];
 const CHUNK = 250;  // rows added per scroll step: the full list runs to thousands
 
 let data = null, tspdt = new Map(), tspdtEdition = "", watched = new Set(), watchlist = new Set();
