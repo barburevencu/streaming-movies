@@ -11,6 +11,8 @@ entries, which carry their TMDB ids) to watched.json. The weekly refresh does
 this, so the export is only needed once, for the backlog. Films marked watched
 without a diary entry never reach the feed; a fresh export picks those up.
 
+Films listed in not_seen.csv (by Letterboxd URI) are left out of an import.
+
 Usage: python3 import_watched.py ~/Downloads/letterboxd-USER-....zip
        python3 import_watched.py --rss [username]
 """
@@ -96,6 +98,11 @@ def main():
     if sys.argv[1] == "--rss":
         return from_rss(sys.argv[2] if len(sys.argv) > 2 else USER)
     rows = read_rows(sys.argv[1])
+    # not_seen.csv: films marked watched on Letterboxd that the site should still count as unseen.
+    skip = HERE / "not_seen.csv"
+    if skip.exists():
+        skip = {r["Letterboxd URI"] for r in csv.DictReader(skip.open(encoding="utf-8"))}
+        rows = [r for r in rows if r["Letterboxd URI"] not in skip]
     if not rows:
         sys.exit("No films in watched.csv; not overwriting watched.json")
     fetch.KEY = fetch.load_key()
