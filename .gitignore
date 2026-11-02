@@ -1,0 +1,5 @@
+# Contains the TMDB API key in plain text — never commit.
+.tmdb_key
+__pycache__/
+.DS_Store
+.claude/

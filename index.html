@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Streaming Films</title>
+<meta name="description" content="Every film streaming on Criterion, Mubi, Netflix, HBO Max, Disney+, Apple TV+ and Kanopy">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="apple-touch-icon" href="favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;800;900&family=Space+Mono:wght@400;700&display=swap">
+<style>
+  /* Same look as Paris Cinemas: the two-ink Riso zine by day, Riso Noir after
+     sunset in Paris (body[data-skin]). */
+  :root { --maxw:760px; --mono:"Space Mono",ui-monospace,monospace; --display:"Archivo",system-ui,sans-serif; }
+  body[data-skin="riso"] {
+    --bg:#f1ece0; --fg:#1b1a17; --muted:#6b665b; --faint:#aaa192; --line:#1b1a17;
+    --accent:#ff2e8a; --accent2:#0047ff; --accent-text:#c8005f; --pillbg:#fff; --poster:#0047ff; color-scheme:light;
+  }
+  body[data-skin="risonoir"] {
+    --bg:#15131a; --fg:#ece6d6; --muted:#8f897c; --faint:#565064; --line:#4b4654;
+    --accent:#ff2e8a; --accent2:#6a97ff; --accent-text:#ff2e8a; --pillbg:transparent; --poster:#3a63d6; color-scheme:dark;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  html { -webkit-font-smoothing:antialiased; }
+  body { background:var(--bg); color:var(--fg); font:15px/1.55 ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+  .wrap { max-width:var(--maxw); margin:0 auto; padding:0 24px; }
+  a { color:inherit; }
+
+  header { position:sticky; top:0; z-index:10; background:var(--bg); border-bottom:2px solid var(--line); }
+  .bar { display:flex; align-items:baseline; gap:16px; padding:16px 0 0; }
+  .logo { font-family:var(--display); font-weight:900; letter-spacing:-.02em; font-size:19px;
+          text-shadow:1.4px 1.4px 0 #ff2e8a; text-decoration:none; }
+  nav { margin-left:auto; display:flex; gap:20px; }
+  .tab { cursor:pointer; color:var(--muted); padding-bottom:12px; border:0; border-bottom:3px solid transparent; margin-bottom:-2px;
+         background:none; font:11.5px var(--mono); text-transform:lowercase; }
+  .tab:hover { color:var(--fg); }
+  .tab.active { color:var(--accent2); border-bottom-color:var(--accent); }
+  .srch { display:flex; align-items:center; align-self:baseline; }
+  .sicon { display:flex; cursor:pointer; background:none; border:0; padding:2px; color:var(--muted); position:relative; top:3.5px; }
+  .sicon:hover { color:var(--fg); }
+  .sicon svg { width:16px; height:16px; }
+  .srch.open .sicon, .srch:not(.open) .search { display:none; }
+  .search { width:150px; font:11.5px var(--mono); color:var(--fg); background:var(--pillbg);
+            border:1.5px solid var(--fg); border-radius:2px; padding:4px 8px; }
+  .search:focus { outline:none; border-color:var(--accent); }
+
+  .controls { display:flex; flex-direction:column; gap:12px; padding:20px 0 0; }
+  .pills { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+  .pill { cursor:pointer; border:1.5px solid var(--fg); border-radius:2px; padding:4px 8px; font:11.5px var(--mono);
+          background:var(--pillbg); color:var(--fg); }
+  .pill:hover { color:var(--accent-text); }
+  .pill.off { color:var(--muted); border-color:var(--faint); background:transparent; }
+  .pill.all.on { background:var(--accent); color:var(--bg); border-color:var(--accent); }
+  body[data-skin="riso"] .pill.all.on { color:var(--fg); }
+  .pill.blue.on { background:var(--accent2); color:#fff; border-color:var(--accent2); }
+  .sels { margin-left:auto; display:flex; gap:16px; }
+  .sel { font:11.5px var(--mono); border:0; padding:5px 2px; background:transparent; color:var(--muted); text-align:right; cursor:pointer; }
+  .sel:hover { color:var(--fg); }
+
+  main { padding:8px 0 32px; }
+  .film { display:flex; gap:16px; align-items:baseline; padding:12px 0; border-bottom:2px solid var(--line); }
+  .poster { flex:0 0 auto; align-self:flex-start; width:46px; height:69px; object-fit:cover; border-radius:4px;
+            background:var(--poster); transition:transform .12s ease, box-shadow .12s ease; cursor:zoom-in; }
+  img.poster:hover { transform:scale(1.07); box-shadow:0 4px 12px rgba(0,0,0,.35); }
+  .info { flex:1; min-width:0; padding-top:1px; }
+  .ti { font-family:var(--display); font-weight:800; letter-spacing:-.01em; font-size:15px; line-height:1.25; }
+  .ti a { text-decoration:none; }
+  .ti a:hover { color:var(--accent-text); }
+  .by { color:var(--muted); font:11.5px/1.6 var(--mono); margin-top:2px; }
+  .morig { font-style:italic; }
+  .tspdt { display:inline-block; margin-left:8px; padding:0 4px; border:1px solid currentColor; border-radius:2px;
+           color:var(--accent-text); font:700 10px/1.45 var(--mono); vertical-align:1.4px; white-space:nowrap; }
+  .newtag { margin-left:8px; color:var(--accent2); font:700 10px var(--mono); text-transform:uppercase; vertical-align:1.4px; }
+  .where { flex:0 0 auto; display:flex; flex-direction:column; align-items:flex-end; gap:2px; max-width:42%;
+           font:700 11.5px var(--mono); color:var(--accent2); text-align:right; }
+  .where a { text-decoration:none; }
+  .where a:hover { color:var(--accent-text); }
+  .where .rg { font-weight:400; color:var(--muted); }
+
+  .chead { display:flex; align-items:baseline; gap:8px; padding:24px 0 8px; border-bottom:2px solid var(--line); }
+  .cname { font-family:var(--display); font-weight:800; font-size:17px; letter-spacing:-.01em; }
+  .caddr { margin-left:auto; color:var(--muted); font:11.5px var(--mono); }
+  .dday { font:700 11.5px var(--mono); color:var(--muted); padding:24px 0 8px; border-bottom:2px solid var(--line); }
+  .gone { padding:8px 0; border-bottom:1px solid var(--line); display:flex; gap:12px; font:11.5px var(--mono); color:var(--muted); }
+  .gone b { color:var(--fg); font-weight:400; flex:1; }
+  .empty, .note { color:var(--muted); font:11.5px/1.6 var(--mono); padding:16px 0; }
+  .note { padding:64px 0; text-align:center; }
+  .more { height:1px; }
+
+  footer { border-top:2px solid var(--line); margin-top:12px; }
+  .status { color:var(--muted); font:11.5px var(--mono); padding:16px 0 64px; }
+
+  #lightbox { position:fixed; inset:0; z-index:100; display:none; align-items:center; justify-content:center; background:rgba(10,8,12,.82); padding:24px; }
+  #lightbox.open { display:flex; }
+  #lightbox img { max-width:92vw; max-height:88vh; border-radius:6px; box-shadow:0 16px 50px rgba(0,0,0,.55); }
+
+  /* Side index (like iOS Contacts): tap or drag to jump to a letter, decade or rank. */
+  #mindex { position:fixed; right:2px; top:50%; transform:translateY(-50%); z-index:20; display:none; flex-direction:column;
+            align-items:center; padding:6px 3px; touch-action:none; user-select:none; -webkit-user-select:none; cursor:pointer; }
+  #mindex.on { display:flex; }
+  @media (pointer:fine) { #mindex { right:16px; } }
+  #mindex span { display:block; padding:0 4px; font:700 var(--ifs,10.5px)/1.65 var(--mono); color:var(--accent-text); }
+  #mindex span.no { color:var(--faint); }
+  #mindex.dec span { line-height:2.3; }
+  .film, .chead { scroll-margin-top:var(--hdr,60px); }
+  .wrap.has-idx { padding-right:max(24px, calc(var(--idxw,0px) - max(0px, (100vw - var(--maxw)) / 2))); }
+
+  @media (max-width:560px) {
+    .bar { flex-wrap:wrap; gap:12px 16px; }
+    nav { margin-left:0; order:2; width:100%; gap:4px 16px; }
+    .srch { order:1; margin-left:auto; }
+    .srch.open { flex:1 1 0; min-width:0; margin-left:8px; }
+    .srch.open .search { width:100%; }
+    /* The services drop under the film's lines, beside the poster. */
+    .film { display:grid; grid-template-columns:46px minmax(0, 1fr); gap:0 16px; align-items:start; }
+    .film .poster { grid-row:1 / span 2; }
+    .where { flex-direction:row; flex-wrap:wrap; gap:2px 12px; max-width:none; margin-top:4px; text-align:left; }
+    .ph-hide, .mdet { display:none; }
+  }
+</style>
+</head>
+<body data-skin="riso">
+<header><div class="wrap">
+  <div class="bar">
+    <a class="logo" href="./">Streaming Films</a>
+    <nav id="tabs">
+      <button class="tab active" data-view="movie">Movies</button>
+      <button class="tab" data-view="service">Services</button>
+      <button class="tab" data-view="new">New</button>
+    </nav>
+    <div class="srch" id="srch">
+      <button class="sicon" id="sicon" type="button" aria-label="Search" title="Search (/)">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+          <circle cx="6.75" cy="6.75" r="4.75"/><path d="M10.25 10.25 14.5 14.5"/></svg></button>
+      <input id="search" class="search" type="search" placeholder="search" aria-label="Search films, directors, countries, genres"
+        autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search">
+    </div>
+  </div>
+</div></header>
+
+<div class="wrap"><div class="controls" id="controls"></div></div>
+<main><div class="wrap" id="view"><div class="note">Loading…</div></div></main>
+<footer><div class="wrap"><div class="status" id="status"></div></div></footer>
+<div id="lightbox" aria-hidden="true"><img alt=""></div>
+<div id="mindex" role="navigation" aria-label="Jump to"></div>
+
+<script>
+const WD = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"], MO = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const REGION_NAMES = {RO:"Romania", US:"USA", GB:"UK", IT:"Italy", DE:"Germany", FR:"France"};
+const NOW_YEAR = new Date().getFullYear();
+const YEAR_BUCKETS = [
+  { k:"new",    label:"New releases", test:y => y >= NOW_YEAR - 1 },
+  { k:"recent", label:"21st century", test:y => y >= 2000 && y <= NOW_YEAR - 2 },
+  { k:"old",    label:"20th century", test:y => y < 2000 },
+];
+const SORT_OPTS = [["title","A–Z"], ["pop","Popular"], ["old","Oldest first"], ["new","Newest first"], ["tspdt","TSPDT rank"]];
+const CHUNK = 250;  // rows added per scroll step: the full list runs to thousands
+
+let data = null, tspdt = new Map(), tspdtEdition = "";
+const initialState = () => ({ view:"movie", services:new Set(), regions:new Set(), servicesOpen:false, regionsOpen:false,
+  yearBuckets:new Set(YEAR_BUCKETS.map(b => b.k)), yearOpen:false, tspdtOnly:false, sort:"title", query:"" });
+const state = initialState();
+const allServices = () => data.services.map(s => s.name);
+const allRegions = () => [...new Set(data.services.flatMap(s => s.regions))];
+function resetFilters(){ state.services = new Set(allServices()); state.regions = new Set(allRegions()); }
+
+function esc(s){ return String(s == null ? "" : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function fmtDate(iso){ const [y,m,d] = iso.slice(0,10).split("-").map(Number); return WD[new Date(y,m-1,d).getDay()] + ", " + MO[m-1] + " " + d; }
+const foldTitle = s => (s || "").normalize("NFD").replace(/[^\p{L}\p{N}]/gu, "").toLowerCase();
+const foldText = s => String(s == null ? "" : s).normalize("NFD").replace(/\p{M}/gu, "").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim();
+
+// Where a film streams, narrowed to the selected services and countries.
+function whereOf(f){
+  const out = [];
+  for(const [s, rs] of Object.entries(f.where)){
+    if(!state.services.has(s)) continue;
+    const r = rs.filter(x => state.regions.has(x));
+    if(r.length) out.push([s, r]);
+  }
+  return out;
+}
+function yearIn(y){
+  if(state.yearBuckets.size === YEAR_BUCKETS.length) return true;
+  const n = parseInt(y, 10);
+  return isNaN(n) || YEAR_BUCKETS.some(b => state.yearBuckets.has(b.k) && b.test(n));
+}
+const rank = f => tspdt.get(f.id);
+
+// Search: every word must match title, original title, director, year,
+// country, genres or a service. A four-digit word is an exact year; "60s" or
+// "1960s" a decade.
+let _qWords = [];
+const _hay = new WeakMap();
+function haystack(f){
+  let h = _hay.get(f);
+  if(h === undefined){
+    const y = parseInt(f.year, 10);
+    h = " " + foldText([f.title, f.orig, f.director, f.country, f.genres, Object.keys(f.where).join(" "),
+      isNaN(y) ? "" : `${Math.floor(y/10)*10}s ${String(Math.floor(y/10)*10).slice(2)}s`].join(" ")) + " ";
+    _hay.set(f, h);
+  }
+  return h;
+}
+function inSearch(f){
+  if(!_qWords.length) return true;
+  const h = haystack(f);
+  return _qWords.every(w => /^\d{4}$/.test(w) ? f.year === w : h.includes(w));
+}
+function visible(){
+  return data.films.filter(f => whereOf(f).length && yearIn(f.year) && (!state.tspdtOnly || rank(f)) && inSearch(f));
+}
+
+// Film row: like a Paris Cinemas film, with the services where its showtimes would be.
+function origTitle(f){ return f.orig && f.lang !== "en" && foldTitle(f.orig) !== foldTitle(f.title) ? f.orig : ""; }
+function metaLine(f){
+  const orig = origTitle(f);
+  const parts = [[f.director, ""], [f.year, ""], [f.country, "ph-hide"]].filter(([v]) => v);
+  const rest = parts.map(([v, cls], i) => `<span${cls ? ` class="${cls}"` : ""}>${i ? " · " : ""}${esc(v)}</span>`).join("");
+  return (orig ? `<span class="ph-hide"><span class="morig">${esc(orig)}</span>${rest ? " · " : ""}</span>` : "") + rest;
+}
+function detailLine(f){
+  const g = (f.genres || "").split(", ").filter(Boolean).slice(0, 2).join(", ");
+  return [f.runtime ? f.runtime + " min" : "", g].filter(Boolean).join(" · ");
+}
+function badge(f){
+  const r = state.tspdtOnly || state.sort === "tspdt" ? rank(f) : undefined;
+  if(!r) return "";
+  const t = `#${r} in TSPDT's 1,000 Greatest Films${tspdtEdition ? ", " + tspdtEdition : ""}`;
+  return `<span class="tspdt" title="${esc(t)}">#${r}</span>`;
+}
+function posterImg(f){
+  if(!f.poster) return `<span class="poster"></span>`;
+  return `<img class="poster" src="${esc(f.poster)}" alt="" loading="lazy" decoding="async">`;
+}
+function filmRow(f, opts = {}){
+  const w = whereOf(f).filter(([s]) => !opts.only || s === opts.only);
+  const tag = opts.newTag && f.added && f.added >= weekAgo() ? `<span class="newtag">new</span>` : "";
+  return `<div class="film"${opts.ig ? ` data-ig="${esc(opts.ig)}"` : ""}>${posterImg(f)}<div class="info">
+    <div class="ti"><a href="${esc(f.lb)}" target="_blank" rel="noopener">${esc(f.title)}</a>${badge(f)}${tag}</div>
+    <div class="by">${metaLine(f)}</div>
+    ${detailLine(f) ? `<div class="by mdet">${esc(detailLine(f))}</div>` : ""}</div>
+    <div class="where">${w.map(([s, rs]) =>
+      `<a href="https://www.themoviedb.org/movie/${f.id}/watch?locale=${rs[0]}" target="_blank" rel="noopener" title="${esc(rs.map(r => REGION_NAMES[r] || r).join(", "))}">` +
+      `${opts.only ? "" : esc(s) + " "}<span class="rg">${rs.join(" ")}</span></a>`).join("")}</div></div>`;
+}
+function weekAgo(){ const d = new Date(Date.now() - 7*864e5); return d.toISOString().slice(0,10); }
+
+// --- Views. Each returns a list of HTML pieces, drawn a chunk at a time. ---
+let _movieIndex = [];
+function movieView(){
+  const yr = f => parseInt(f.year, 10);
+  const byTitle = (a, b) => foldTitle(a.title).localeCompare(foldTitle(b.title)) || a.title.localeCompare(b.title);
+  const list = visible();
+  if(state.sort === "title") list.sort(byTitle);
+  else if(state.sort === "pop") list.sort((a, b) => b.pop - a.pop);
+  else if(state.sort === "tspdt") list.sort((a, b) => ((rank(a) ?? 1e9) - (rank(b) ?? 1e9)) || byTitle(a, b));
+  else { const dir = state.sort === "new" ? -1 : 1; list.sort((a, b) => (isNaN(yr(a)) - isNaN(yr(b))) || dir * (yr(a) - yr(b)) || byTitle(a, b)); }
+  const groupOf = f => {
+    if(state.sort === "title"){ const ch = foldTitle(f.title).charAt(0).toUpperCase(); return /[A-Z]/.test(ch) ? ch : "#"; }
+    if(state.sort === "tspdt") return rank(f) ? String(Math.floor(rank(f) / 100) * 100 || 1) : "?";
+    if(state.sort === "pop") return "";
+    return isNaN(yr(f)) ? "?" : String(Math.floor(yr(f) / 10) * 10);
+  };
+  const seen = new Set();
+  const rows = list.map(f => { const g = groupOf(f), first = g && !seen.has(g); seen.add(g); return filmRow(f, {ig: first ? g : "", newTag:true}); });
+  let keys = [];
+  if(state.sort === "title") keys = ["#", ..."ABCDEFGHIJKLMNOPQRSTUVWXYZ"];
+  else if(state.sort === "tspdt") keys = ["1","100","200","300","400","500","600","700","800","900"];
+  else if(state.sort !== "pop"){
+    const ds = [...seen].filter(g => g && g !== "?").map(Number);
+    if(ds.length) for(let d = Math.min(...ds); d <= Math.max(...ds); d += 10) keys.push(String(d));
+    if(state.sort === "new") keys.reverse();
+  }
+  if(seen.has("?")) keys.push("?");
+  _movieIndex = keys.map(k => ({k, has:seen.has(k)}));
+  return rows;
+}
+function serviceView(){
+  const list = visible().sort((a, b) => b.pop - a.pop);
+  const out = [];
+  for(const s of data.services){
+    if(!state.services.has(s.name)) continue;
+    const films = list.filter(f => whereOf(f).some(([x]) => x === s.name));
+    const regions = s.regions.filter(r => state.regions.has(r));
+    if(!films.length && (_qWords.length || !regions.length)) continue;
+    out.push(`<div class="chead"><span class="cname">${esc(s.name)}</span><span class="caddr">${films.length.toLocaleString()} films · ${regions.join(" ")}</span></div>`);
+    if(!films.length) out.push(`<div class="empty">Nothing here.</div>`);
+    for(const f of films) out.push(filmRow(f, {only:s.name, newTag:true}));
+  }
+  return out;
+}
+function newView(){
+  const byDate = new Map();
+  for(const f of visible()) if(f.added){ if(!byDate.has(f.added)) byDate.set(f.added, []); byDate.get(f.added).push(f); }
+  const out = [];
+  for(const d of [...byDate.keys()].sort().reverse()){
+    out.push(`<div class="dday">Added ${fmtDate(d)}</div>`);
+    for(const f of byDate.get(d).sort((a, b) => b.pop - a.pop)) out.push(filmRow(f));
+  }
+  if(!out.length) out.push(`<div class="empty">Nothing new yet: tracking started ${fmtDate(data.generated_at)}, so arrivals show up from the next refresh.</div>`);
+  const gone = data.gone.filter(g => state.services.has(g.service) && state.regions.has(g.region))
+    .sort((a, b) => b.last.localeCompare(a.last));
+  if(gone.length){
+    out.push(`<div class="dday">Left in the past month</div>`);
+    for(const g of gone) out.push(`<div class="gone"><b>${esc(g.title)}</b><span>${esc(g.year)}</span><span>${esc(g.service)} ${esc(g.region)}</span></div>`);
+  }
+  return out;
+}
+
+// --- Drawing: the first chunk at once, more as the end scrolls into view. ---
+let _rows = [], _shown = 0, _sig = "";
+const viewEl = document.getElementById("view");
+const moreObs = new IntersectionObserver(es => { if(es.some(e => e.isIntersecting)) drawMore(); }, {rootMargin:"1200px"});
+function drawMore(upTo){
+  const end = Math.min(_rows.length, Math.max(_shown + CHUNK, upTo || 0));
+  if(end <= _shown) return;
+  const old = viewEl.querySelector(".more"); if(old) old.remove();
+  viewEl.insertAdjacentHTML("beforeend", _rows.slice(_shown, end).join("") + (end < _rows.length ? `<div class="more"></div>` : ""));
+  _shown = end;
+  const m = viewEl.querySelector(".more"); if(m) moreObs.observe(m);
+}
+function renderView(){
+  const rows = state.view === "service" ? serviceView() : state.view === "new" ? newView() : movieView();
+  const sig = rows.length + ":" + rows.slice(0, 40).join("").length + ":" + state.view + state.sort + [...state.services] + [...state.regions];
+  if(sig === _sig && rows.join("") === _rows.join("")) return;
+  _sig = sig; _rows = rows; _shown = 0;
+  viewEl.innerHTML = rows.length ? "" : `<div class="empty">${_qWords.length ? `Nothing matches “${esc(state.query.trim())}”.` : "Nothing to show."}</div>`;
+  drawMore();
+}
+
+function renderIndex(){
+  const ix = document.getElementById("mindex");
+  const on = state.view === "movie" && _movieIndex.some(x => x.has);
+  ix.classList.toggle("on", on);
+  viewEl.classList.toggle("has-idx", on);
+  if(!on){ ix.innerHTML = ""; ix.dataset.sig = ""; return; }
+  const sig = state.sort + ":" + _movieIndex.map(x => x.k + (x.has ? "+" : "")).join(",");
+  if(ix.dataset.sig === sig) return;
+  ix.dataset.sig = sig;
+  const dec = state.sort !== "title";
+  ix.classList.toggle("dec", dec);
+  ix.style.setProperty("--ifs", Math.min(10.5, (innerHeight - 170) / _movieIndex.length / (dec ? 2.3 : 1.65)) + "px");
+  ix.innerHTML = _movieIndex.map(x => `<span data-k="${esc(x.k)}"${x.has ? "" : ` class="no"`}>${esc(x.k)}</span>`).join("");
+  document.documentElement.style.setProperty("--idxw", Math.ceil(document.documentElement.clientWidth - ix.getBoundingClientRect().left + 8) + "px");
+}
+(() => {
+  const ix = document.getElementById("mindex");
+  let active = false, last = null;
+  const jump = y => {
+    const spans = [...ix.querySelectorAll("span")];
+    if(!spans.length) return;
+    let i = spans.findIndex(sp => y < sp.getBoundingClientRect().bottom);
+    if(i < 0) i = spans.length - 1;
+    let j = i;
+    while(j < _movieIndex.length && !_movieIndex[j].has) j++;
+    if(j >= _movieIndex.length){ j = i; while(j >= 0 && !_movieIndex[j].has) j--; }
+    if(j < 0 || _movieIndex[j].k === last) return;
+    last = _movieIndex[j].k;
+    // Draw down to that group (and a screenful past it) before jumping.
+    const at = _rows.findIndex(r => r.includes(` data-ig="${esc(last)}"`));
+    if(at >= _shown) drawMore(at + 40);
+    const el = viewEl.querySelector(`.film[data-ig="${CSS.escape(last)}"]`);
+    if(!el) return;
+    document.documentElement.style.setProperty("--hdr", document.querySelector("header").offsetHeight + "px");
+    el.scrollIntoView({block:"start"});
+  };
+  ix.addEventListener("pointerdown", e => { active = true; try { ix.setPointerCapture(e.pointerId); } catch(_){} jump(e.clientY); e.preventDefault(); });
+  ix.addEventListener("pointermove", e => { if(active) jump(e.clientY); });
+  ix.addEventListener("pointerup", () => { active = false; last = null; });
+  ix.addEventListener("pointercancel", () => { active = false; last = null; });
+  addEventListener("resize", () => { ix.dataset.sig = ""; if(data) renderIndex(); });
+})();
+
+// --- Controls: Services and Countries are collapsible pills like Cinemas; Year and TSPDT as on Paris Cinemas. ---
+// Clicking one item while all are on isolates it; clicking the lone item again flips to all the others.
+function toggleIn(set, all, k){
+  if(set.size === all.length) return new Set([k]);
+  if(set.size === 1 && set.has(k)) return new Set(all.filter(x => x !== k));
+  const s = new Set(set); s.has(k) ? s.delete(k) : s.add(k);
+  return s.size ? s : new Set(all);
+}
+function renderControls(){
+  const svc = allServices(), reg = allRegions();
+  const allYears = state.yearBuckets.size === YEAR_BUCKETS.length;
+  const p = (cls, attrs, label, title) => `<button class="pill ${cls}" ${attrs}${title ? ` title="${esc(title)}"` : ""}>${esc(label)}</button>`;
+  let row1 = p("all" + (state.services.size === svc.length ? " on" : ""), `data-svcall="1"`, "Services");
+  if(state.servicesOpen) row1 += svc.map(s => p(state.services.has(s) ? "" : "off", `data-s="${esc(s)}"`, s)).join("");
+  let row2 = reg.length > 1 ? p("all blue" + (state.regions.size === reg.length ? " on" : ""), `data-regall="1"`, "Countries") : "";
+  if(state.regionsOpen) row2 += reg.map(r => p(state.regions.has(r) ? "" : "off", `data-r="${r}"`, r, REGION_NAMES[r])).join("");
+  let row3 = p("all" + (allYears ? " on" : ""), `data-yall="1"`, "Year");
+  if(state.yearOpen) row3 += YEAR_BUCKETS.map(b => p(state.yearBuckets.has(b.k) ? "" : "off", `data-y="${b.k}"`, b.label)).join("");
+  if(tspdt.size) row3 += p("all" + (state.tspdtOnly ? " on" : ""), `data-tspdt="1"`, "TSPDT", "Only films in TSPDT's 1,000 Greatest Films, with their rank");
+  const sortSel = state.view === "movie" ? `<select id="sort" class="sel" aria-label="Sort movies">` +
+    SORT_OPTS.filter(([v]) => v !== "tspdt" || tspdt.size).map(([v, l]) => `<option value="${v}">${l}</option>`).join("") + `</select>` : "";
+  const c = document.getElementById("controls");
+  c.innerHTML = `<div class="pills">${row1}</div>` + (row2 ? `<div class="pills">${row2}</div>` : "") +
+    `<div class="pills">${row3}<div class="sels">${sortSel}</div></div>`;
+  const sel = c.querySelector("#sort");
+  if(sel){ sel.value = state.sort; sel.onchange = () => { state.sort = sel.value; renderAll(); scrollTo(0, 0); }; }
+  c.onclick = e => {
+    const b = e.target.closest(".pill"); if(!b) return;
+    const d = b.dataset;
+    if(d.svcall){ state.servicesOpen = !state.servicesOpen; if(!state.servicesOpen) state.services = new Set(svc); }
+    else if(d.s) state.services = toggleIn(state.services, svc, d.s);
+    else if(d.regall){ state.regionsOpen = !state.regionsOpen; if(!state.regionsOpen) state.regions = new Set(reg); }
+    else if(d.r) state.regions = toggleIn(state.regions, reg, d.r);
+    else if(d.yall){ state.yearOpen = !state.yearOpen; if(!state.yearOpen) state.yearBuckets = new Set(YEAR_BUCKETS.map(b => b.k)); }
+    else if(d.y) state.yearBuckets = toggleIn(state.yearBuckets, YEAR_BUCKETS.map(b => b.k), d.y);
+    else if(d.tspdt){ state.tspdtOnly = !state.tspdtOnly; if(!state.tspdtOnly && state.sort === "tspdt") state.sort = "title"; }
+    renderAll();
+  };
+}
+function renderStatus(){
+  const n = data.films.length;
+  document.getElementById("status").textContent =
+    `Updated ${fmtDate(data.generated_at)}  ·  ${n.toLocaleString()} films  ·  availability from TMDB / JustWatch`;
+}
+function renderAll(){ renderControls(); renderView(); renderStatus(); renderIndex(); }
+
+document.getElementById("tabs").onclick = e => {
+  const t = e.target.closest(".tab"); if(!t) return;
+  document.querySelectorAll(".tab").forEach(x => x.classList.toggle("active", x === t));
+  state.view = t.dataset.view;
+  renderAll(); scrollTo(0, 0);
+};
+
+// Search: the magnifier (or "/") opens it; kept in the URL as ?q= so a search can be shared.
+const searchBox = document.getElementById("search"), srch = document.getElementById("srch");
+function openSearch(){ srch.classList.add("open"); searchBox.focus(); searchBox.select(); }
+document.getElementById("sicon").onclick = openSearch;
+searchBox.addEventListener("blur", () => { if(!searchBox.value.trim()) srch.classList.remove("open"); });
+function setSearch(q){
+  if(searchBox.value !== q) searchBox.value = q;
+  if(q.trim()) srch.classList.add("open");
+  state.query = q; _qWords = foldText(q).split(" ").filter(Boolean);
+  const u = new URL(location.href);
+  if(q.trim()) u.searchParams.set("q", q.trim()); else u.searchParams.delete("q");
+  history.replaceState(null, "", u);
+}
+let _searchT = 0;
+searchBox.addEventListener("input", () => { clearTimeout(_searchT); _searchT = setTimeout(() => { setSearch(searchBox.value); if(data) renderAll(); }, 150); });
+searchBox.addEventListener("keydown", e => {
+  if(e.key === "Escape"){ setSearch(""); searchBox.blur(); srch.classList.remove("open"); if(data) renderAll(); }
+  if(e.key === "Enter") searchBox.blur();
+});
+document.addEventListener("keydown", e => {
+  if(e.key !== "/" || e.metaKey || e.ctrlKey || e.altKey || e.target.closest?.("input, select, textarea")) return;
+  e.preventDefault(); openSearch();
+});
+setSearch(new URLSearchParams(location.search).get("q") || "");
+
+document.querySelector(".logo").onclick = e => {
+  if(e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0 || !data) return;
+  e.preventDefault();
+  Object.assign(state, initialState()); resetFilters(); setSearch("");
+  document.querySelectorAll(".tab").forEach(x => x.classList.toggle("active", x.dataset.view === "movie"));
+  renderAll(); scrollTo({top:0, behavior:"smooth"});
+};
+
+// --- Theme follows the sun in Paris, as on Paris Cinemas: Riso by day, Riso Noir after sunset. ---
+function parisIsDaylight(){
+  const lat = 48.8566, lng = 2.3522, rad = Math.PI / 180, now = Date.now();
+  const J = now / 86400000 + 2440587.5, n = Math.round(J - 2451545.0 + 0.0008), Js = n + lng / 360;
+  const M = (357.5291 + 0.98560028 * Js) % 360;
+  const C = 1.9148 * Math.sin(M * rad) + 0.0200 * Math.sin(2 * M * rad) + 0.0003 * Math.sin(3 * M * rad);
+  const lam = (M + C + 180 + 102.9372) % 360;
+  const Jt = 2451545.0 + Js + 0.0053 * Math.sin(M * rad) - 0.0069 * Math.sin(2 * lam * rad);
+  const decl = Math.asin(Math.sin(lam * rad) * Math.sin(23.44 * rad));
+  const cosH = (Math.sin(-0.833 * rad) - Math.sin(lat * rad) * Math.sin(decl)) / (Math.cos(lat * rad) * Math.cos(decl));
+  if(cosH <= -1) return true;
+  if(cosH >= 1) return false;
+  const H = Math.acos(cosH) / rad, toMs = j => (j - 2440587.5) * 86400000;
+  return now >= toMs(Jt - H / 360) && now < toMs(Jt + H / 360);
+}
+function applyAutoSkin(){ document.body.dataset.skin = parisIsDaylight() ? "riso" : "risonoir"; }
+applyAutoSkin();
+setInterval(applyAutoSkin, 300000);
+
+// --- Poster lightbox: click a poster for the large version. ---
+const _lb = document.getElementById("lightbox"), _lbImg = _lb.querySelector("img");
+viewEl.addEventListener("click", e => {
+  const img = e.target.closest("img.poster"); if(!img) return;
+  _lbImg.src = img.src.replace("/w185/", "/w780/");
+  _lb.classList.add("open"); _lb.setAttribute("aria-hidden", "false");
+});
+function closeLightbox(){ _lb.classList.remove("open"); _lb.setAttribute("aria-hidden", "true"); _lbImg.removeAttribute("src"); }
+_lb.addEventListener("click", closeLightbox);
+document.addEventListener("keydown", e => { if(e.key === "Escape") closeLightbox(); });
+
+async function load(){
+  try {
+    const [d, t] = await Promise.all([
+      fetch("data.json", {cache:"no-store"}).then(r => r.json()),
+      fetch("tspdt.json").then(r => r.json()).catch(() => null)]);
+    data = d;
+    if(t){ t.tmdb.forEach((id, i) => { if(id && !tspdt.has(id)) tspdt.set(id, i + 1); }); tspdtEdition = t.edition || ""; }
+  } catch(e) { viewEl.innerHTML = `<div class="note">Could not load data.json.</div>`; return; }
+  resetFilters();
+  renderAll();
+}
+load();
+</script>
+</body>
+</html>
