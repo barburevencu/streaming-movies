@@ -69,6 +69,7 @@
   .pill.all.on { background:var(--o); color:#fff8ea; }
   .pill[data-tspdt].on { background:var(--y); color:#3b1f12; }
   .pill[data-watched].on { background:var(--t); color:#fff8ea; }
+  .pill[data-watchlist].on { background:var(--fg); color:var(--bg); }
   .pill[data-yall].on { background:var(--p); color:#fff8ea; }
   .sels { margin-left:auto; }
   body:has(#mindex.on) .controls { padding-right:var(--idxw,0px); }
@@ -192,9 +193,9 @@ const YEAR_BUCKETS = [
 const SORT_OPTS = [["top","Top rated"], ["title","A–Z"], ["old","Oldest first"], ["new","Newest first"], ["tspdt","TSPDT rank"]];
 const CHUNK = 250;  // rows added per scroll step: the full list runs to thousands
 
-let data = null, tspdt = new Map(), tspdtEdition = "", watched = new Set();
+let data = null, tspdt = new Map(), tspdtEdition = "", watched = new Set(), watchlist = new Set();
 const initialState = () => ({ view:"posters", platforms:new Set(), regions:new Set(), platformsOpen:false,
-  yearBuckets:new Set(YEAR_BUCKETS.map(b => b.k)), yearOpen:false, tspdtOnly:false, hideWatched:false, sort:"top", query:"" });
+  yearBuckets:new Set(YEAR_BUCKETS.map(b => b.k)), yearOpen:false, tspdtOnly:false, hideWatched:false, watchlistOnly:false, sort:"top", query:"" });
 const state = initialState();
 const allPlatforms = () => data.platforms.map(s => s.name);
 const allRegions = () => [...new Set(data.platforms.flatMap(s => s.regions))];
@@ -248,7 +249,7 @@ function inSearch(f){
   return _qWords.every(w => /^\d{4}$/.test(w) ? f.year === w : h.includes(w));
 }
 function visible(){
-  return data.films.filter(f => whereOf(f).length && yearIn(f.year) && (!state.tspdtOnly || rank(f)) && !(state.hideWatched && watched.has(f.id)) && inSearch(f));
+  return data.films.filter(f => whereOf(f).length && yearIn(f.year) && (!state.tspdtOnly || rank(f)) && !(state.hideWatched && watched.has(f.id)) && (!state.watchlistOnly || watchlist.has(f.id)) && inSearch(f));
 }
 
 // A film as a poster card or a list line, with the platforms where it streams.
@@ -271,7 +272,7 @@ function badge(f){
 }
 function posterImg(f){
   if(!f.poster) return `<span class="poster"></span>`;
-  return `<img class="poster" src="${esc(f.poster.replace("/w185/", "/w342/"))}" alt="" loading="lazy" decoding="async">`;
+  return `<img class="poster" src="https://image.tmdb.org/t/p/w342${esc(f.poster)}" alt="" loading="lazy" decoding="async">`;
 }
 // Soft hyphens every few letters in very long words, so a title like Symbiopsychotaxiplasm
 // wraps with a hyphen at the last spot that fits rather than overflowing the card.
@@ -281,7 +282,7 @@ function stickers(f){
     `<a href="https://www.themoviedb.org/movie/${f.id}/watch?locale=${rs[0]}" target="_blank" rel="noopener" title="${esc(rs.map(r => REGION_NAMES[r] || r).join(", "))}">` +
     esc(s) + (oneRegion(s) ? "" : ` <span class="rg">${rs.join(" ")}</span>`) + `</a>`).join("");
 }
-const titleLink = f => `<a href="${esc(f.lb)}" target="_blank" rel="noopener">${esc(breakable(f.title))}</a>${badge(f)}` +
+const titleLink = f => `<a href="https://letterboxd.com/tmdb/${f.id}/" target="_blank" rel="noopener">${esc(breakable(f.title))}</a>${badge(f)}` +
   (isNew(f) ? `<span class="newtag">new</span>` : "");
 const igAttr = ig => ig ? ` data-ig="${esc(ig)}"` : "";
 function posterCard(f, ig){
@@ -300,7 +301,8 @@ function listLine(f, ig){
 function weekAgo(){ const d = new Date(Date.now() - 7*864e5); return d.toISOString().slice(0,10); }
 const isNew = f => f.added && f.added >= weekAgo();
 
-// --- Views. Each returns a list of HTML pieces, drawn a chunk at a time. ---
+// --- Views. Each returns the films to show, each with the index group it opens (if any);
+// their HTML is built a chunk at a time, as they're drawn. ---
 let _movieIndex = [];
 function filmsView(){
   const yr = f => parseInt(f.year, 10);
@@ -317,8 +319,7 @@ function filmsView(){
     return isNaN(yr(f)) ? "?" : String(Math.floor(yr(f) / 10) * 10);
   };
   const seen = new Set();
-  const draw = state.view === "list" ? listLine : posterCard;
-  const rows = list.map(f => { const g = groupOf(f), first = g && !seen.has(g); seen.add(g); return draw(f, first ? g : ""); });
+  const rows = list.map(f => { const g = groupOf(f), first = g && !seen.has(g); seen.add(g); return [f, first ? g : ""]; });
   let keys = [];
   if(state.sort === "title") keys = ["#", ..."ABCDEFGHIJKLMNOPQRSTUVWXYZ"];
   else if(state.sort === "tspdt") keys = ["1","100","200","300","400","500","600","700","800","900"];
@@ -339,15 +340,18 @@ function drawMore(upTo){
   const end = Math.min(_rows.length, Math.max(_shown + CHUNK, upTo || 0));
   if(end <= _shown) return;
   const old = viewEl.querySelector(".more"); if(old) old.remove();
-  viewEl.insertAdjacentHTML("beforeend", _rows.slice(_shown, end).join("") + (end < _rows.length ? `<div class="more"></div>` : ""));
+  const draw = state.view === "list" ? listLine : posterCard;
+  viewEl.insertAdjacentHTML("beforeend", _rows.slice(_shown, end).map(([f, ig]) => draw(f, ig)).join("") + (end < _rows.length ? `<div class="more"></div>` : ""));
   _shown = end;
   const m = viewEl.querySelector(".more"); if(m) moreObs.observe(m);
 }
 function renderView(){
   viewEl.classList.toggle("list", state.view === "list");
   const rows = filmsView();
-  const sig = rows.length + ":" + rows.slice(0, 40).join("").length + ":" + state.view + state.sort + [...state.platforms] + [...state.regions];
-  if(sig === _sig && rows.join("") === _rows.join("")) return;
+  // Same films in the same order, drawn the same way: leave the page (and its scroll) alone.
+  const sig = [state.view, state.sort, state.tspdtOnly, [...state.platforms], [...state.regions],
+    rows.map(([f, ig]) => f.id + ig)].join("|");
+  if(sig === _sig) return;
   _sig = sig; _rows = rows; _shown = 0;
   viewEl.innerHTML = rows.length ? "" : `<div class="empty">${_qWords.length ? `Nothing matches “${esc(state.query.trim())}”.` : "Nothing to show."}</div>`;
   drawMore();
@@ -382,7 +386,7 @@ function renderIndex(){
     if(j < 0 || _movieIndex[j].k === last) return;
     last = _movieIndex[j].k;
     // Draw down to that group (and a screenful past it) before jumping.
-    const at = _rows.findIndex(r => r.includes(` data-ig="${esc(last)}"`));
+    const at = _rows.findIndex(([, ig]) => ig === last);
     if(at >= _shown) drawMore(at + 40);
     const el = viewEl.querySelector(`[data-ig="${CSS.escape(last)}"]`);
     if(!el) return;
@@ -396,8 +400,8 @@ function renderIndex(){
   addEventListener("resize", () => { ix.dataset.sig = ""; if(data) renderIndex(); });
 })();
 
-// --- Controls, as on Paris Cinemas: Platforms is a collapsible pill like Cinemas, then Year, TSPDT and Unseen.
-// Collapsed, they share one row; Year drops to its own row once Platforms opens, and TSPDT and Unseen once Year opens.
+// --- Controls, as on Paris Cinemas: Platforms is a collapsible pill like Cinemas, then Year, TSPDT, Unseen and Watchlist.
+// Collapsed, they share one row; Year drops to its own row once Platforms opens, and the rest once Year opens.
 // Clicking one item while all are on isolates it; clicking the lone item again flips to all the others.
 function toggleIn(set, all, k){
   if(set.size === all.length) return new Set([k]);
@@ -412,7 +416,8 @@ function renderControls(){
   const svcBtn = p("all" + (state.platforms.size === svc.length ? " on" : ""), `data-svcall="1"`, "Platforms") +
     (state.platformsOpen ? svc.map(s => p(state.platforms.has(s) ? "" : "off", `data-s="${esc(s)}"`, s)).join("") : "");
   const tspdtPill = (tspdt.size ? p("all" + (state.tspdtOnly ? " on" : ""), `data-tspdt="1"`, "TSPDT", "Only films in TSPDT's 1,000 Greatest Films, with their rank") : "") +
-    (watched.size ? p("all" + (state.hideWatched ? " on" : ""), `data-watched="1"`, "Unseen") : "");
+    (watched.size ? p("all" + (state.hideWatched ? " on" : ""), `data-watched="1"`, "Unseen") : "") +
+    (watchlist.size ? p("all" + (state.watchlistOnly ? " on" : ""), `data-watchlist="1"`, "Watchlist", "Only films on my Letterboxd watchlist") : "");
   const yearBtn = p("all" + (allYears ? " on" : ""), `data-yall="1"`, "Year") +
     (state.yearOpen ? YEAR_BUCKETS.map(b => p(state.yearBuckets.has(b.k) ? "" : "off", `data-y="${b.k}"`, b.label)).join("") : tspdtPill);
   const rows = state.platformsOpen ? [svcBtn, yearBtn] : [svcBtn + yearBtn];
@@ -433,6 +438,7 @@ function renderControls(){
     else if(d.y) state.yearBuckets = toggleIn(state.yearBuckets, YEAR_BUCKETS.map(b => b.k), d.y);
     else if(d.tspdt){ state.tspdtOnly = !state.tspdtOnly; if(!state.tspdtOnly && state.sort === "tspdt") state.sort = "top"; }
     else if(d.watched) state.hideWatched = !state.hideWatched;
+    else if(d.watchlist) state.watchlistOnly = !state.watchlistOnly;
     renderAll();
   };
 }
@@ -510,15 +516,18 @@ document.addEventListener("keydown", e => { if(e.key === "Escape") closeLightbox
 
 async function load(){
   try {
-    const [d, t, w] = await Promise.all([
-      fetch("data.json", {cache:"no-store"}).then(r => r.json()),
+    const [d, t, w, wl] = await Promise.all([
+      // no-cache, not no-store: the phone keeps its copy and only downloads it again after a refresh.
+      fetch("data.json", {cache:"no-cache"}).then(r => r.json()),
       fetch("tspdt.json").then(r => r.json()).catch(() => null),
-      fetch("watched.json", {cache:"no-store"}).then(r => r.json()).catch(() => null)]);
+      fetch("watched.json", {cache:"no-store"}).then(r => r.json()).catch(() => null),
+      fetch("watchlist.json", {cache:"no-store"}).then(r => r.json()).catch(() => null)]);
     data = d;
     const rated = d.films.filter(f => f.votes >= 50);
     if(rated.length) meanRating = rated.reduce((n, f) => n + f.rating, 0) / rated.length;
     if(t){ t.tmdb.forEach((id, i) => { if(id && !tspdt.has(id)) tspdt.set(id, i + 1); }); tspdtEdition = t.edition || ""; }
     if(w) watched = new Set(Object.values(w.films).filter(Boolean));
+    if(wl) watchlist = new Set(Object.values(wl.films).filter(Boolean));
   } catch(e) { viewEl.innerHTML = `<div class="note">Could not load data.json.</div>`; return; }
   resetFilters();
   renderAll();

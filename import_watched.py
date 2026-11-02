@@ -11,10 +11,16 @@ entries, which carry their TMDB ids) to watched.json. The weekly refresh does
 this, so the export is only needed once, for the backlog. Films marked watched
 without a diary entry never reach the feed; a fresh export picks those up.
 
+With --watchlist it instead reads the user's public Letterboxd watchlist into
+watchlist.json, for the Watchlist pill. Each film's TMDB id comes from its
+Letterboxd page; ids already in watchlist.json are reused. The weekly refresh
+does this too.
+
 Films listed in not_seen.csv (by Letterboxd URI) are left out of an import.
 
 Usage: python3 import_watched.py ~/Downloads/letterboxd-USER-....zip
        python3 import_watched.py --rss [username]
+       python3 import_watched.py --watchlist [username]
 """
 
 import csv
@@ -86,12 +92,16 @@ def save(films):
     fetch.write_json("watched.json", {"generated_at": dt.datetime.now().isoformat(timespec="seconds"), "films": films}, indent=0)
 
 
-def from_rss(user):
-    """Add the diary feed's films to watched.json, keyed rss:<slug>."""
-    req = urllib.request.Request(f"https://letterboxd.com/{user}/rss/",
+def letterboxd(path):
+    req = urllib.request.Request(f"https://letterboxd.com{path}",
                                  headers={"User-Agent": "streaming-movies (github.com/barburevencu/streaming-movies)"})
     with urllib.request.urlopen(req, timeout=30) as resp:
-        xml = resp.read().decode("utf-8", "replace")
+        return resp.read().decode("utf-8", "replace")
+
+
+def from_rss(user):
+    """Add the diary feed's films to watched.json, keyed rss:<slug>."""
+    xml = letterboxd(f"/{user}/rss/")
     out = HERE / "watched.json"
     films = json.loads(out.read_text())["films"] if out.exists() else {}
     ids = set(films.values())
@@ -107,11 +117,41 @@ def from_rss(user):
     print(f"{new} films added to watched.json from {user}'s diary feed; {len(ids - {None})} watched in all")
 
 
+def from_watchlist(user):
+    """Write the user's watchlist to watchlist.json, as Letterboxd slug -> TMDB id."""
+    slugs, page = [], 1
+    while True:
+        html = letterboxd(f"/{user}/watchlist/page/{page}/")
+        found = re.findall(r'data-item-slug="([^"]+)"', html)
+        slugs += [s for s in found if s not in slugs]
+        if not found or f"/watchlist/page/{page + 1}/" not in html:
+            break
+        page += 1
+    if not slugs:
+        sys.exit(f"No films found on {user}'s watchlist; not overwriting watchlist.json")
+    out = HERE / "watchlist.json"
+    known = json.loads(out.read_text())["films"] if out.exists() else {}
+
+    def tmdb_id(slug):
+        if known.get(slug):
+            return known[slug]
+        m = re.search(r'data-tmdb-type="movie"\s+data-tmdb-id="(\d+)"', letterboxd(f"/film/{slug}/"))
+        return int(m.group(1)) if m else None  # TV entries carry a tv id, which the site has no use for
+
+    with ThreadPoolExecutor(4) as pool:
+        films = dict(zip(slugs, pool.map(tmdb_id, slugs)))
+    fetch.write_json("watchlist.json", {"generated_at": dt.datetime.now().isoformat(timespec="seconds"), "films": films}, indent=0)
+    missing = [s for s, mid in films.items() if mid is None]
+    print(f"{len(films)} films written to watchlist.json from {user}'s watchlist; {len(missing)} without a TMDB id: {missing[:20]}")
+
+
 def main():
     if len(sys.argv) < 2:
         sys.exit(__doc__)
     if sys.argv[1] == "--rss":
         return from_rss(sys.argv[2] if len(sys.argv) > 2 else USER)
+    if sys.argv[1] == "--watchlist":
+        return from_watchlist(sys.argv[2] if len(sys.argv) > 2 else USER)
     rows = read_rows(sys.argv[1])
     # not_seen.csv: films marked watched on Letterboxd that the site should still count as unseen.
     skip = HERE / "not_seen.csv"
