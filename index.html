@@ -63,6 +63,8 @@
   .search:focus { outline:none; box-shadow:3px 3px 0 var(--o); }
 
   .controls { display:flex; flex-direction:column; gap:10px; padding:22px 0 4px; }
+  /* The pills stick under the header while the films scroll beneath them. */
+  .ctlbar { position:sticky; top:var(--hdr,0px); z-index:9; background:var(--bg); padding-bottom:12px; }
   .pills { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
   .pill { cursor:pointer; border:2px solid var(--fg); border-radius:999px; padding:5px 13px; font:500 12px var(--mono);
           background:var(--card); color:var(--fg); transition:transform .1s; }
@@ -154,7 +156,7 @@
   #mindex span { display:block; padding:0 4px; font:700 var(--ifs,10.5px)/1.65 var(--mono); color:var(--o); }
   #mindex span.no { color:var(--faint); }
   #mindex.dec span { line-height:2.3; }
-  .film, .lrow { scroll-margin-top:var(--hdr,80px); }
+  .film, .lrow { scroll-margin-top:calc(var(--hdr,80px) + var(--ctl,0px)); }
   .wrap.has-idx { padding-right:max(24px, calc(var(--idxw,0px) - max(0px, (100vw - var(--maxw)) / 2))); }
 
   @media (max-width:560px) {
@@ -166,11 +168,12 @@
     .bar { flex-wrap:wrap; gap:10px; }
     .logo { font-size:24px; }
     .logo .mark { width:30px; height:30px; }
-    nav { margin-left:0; order:3; width:100%; }
+    /* Just "Cambokino" on a phone, so an open search fills the rest of the logo's row; 16px text, or iOS zooms in on it. */
+    .logo .lmore { display:none; }
+    nav { margin-left:0; order:2; width:100%; }
     .srch { order:1; margin-left:auto; }
-    /* Open, the search gets a full-width row of its own under the logo; 16px text, or iOS zooms in on it. */
-    .srch.open { order:2; flex:1 1 100%; margin-left:0; }
-    .srch.open .search { width:100%; font-size:16px; padding:8px 16px; }
+    .srch.open { flex:1 1 0; min-width:0; }
+    .srch.open .search { width:100%; font-size:16px; padding:6px 14px; }
     #view { grid-template-columns:repeat(2, minmax(0, 1fr)); gap:26px 18px; }
     .by .ph-hide, .mdet { display:none; }
     .lrow { flex-wrap:wrap; }
@@ -182,7 +185,7 @@
 <body data-skin="funk">
 <header><div class="wrap">
   <div class="bar">
-    <a class="logo" href="./"><img class="mark" src="favicon.svg" alt="">Cambokino Movies</a>
+    <a class="logo" href="./"><img class="mark" src="favicon.svg" alt="">Cambokino<span class="lmore"> Movies</span></a>
     <nav id="tabs">
       <button class="tab active" data-view="posters">Posters</button>
       <button class="tab" data-view="list">List</button>
@@ -197,7 +200,7 @@
   </div>
 </div></header>
 
-<div class="wrap"><div class="controls" id="controls"></div></div>
+<div class="ctlbar"><div class="wrap"><div class="controls" id="controls"></div></div></div>
 <main><div class="wrap" id="view"><div class="note">Loading…</div></div></main>
 <footer></footer>
 <div id="lightbox" aria-hidden="true"><img alt=""></div>
@@ -413,7 +416,6 @@ function renderIndex(){
     if(at >= _shown) drawMore(at + 40);
     const el = viewEl.querySelector(`[data-ig="${CSS.escape(last)}"]`);
     if(!el) return;
-    document.documentElement.style.setProperty("--hdr", document.querySelector("header").offsetHeight + "px");
     el.scrollIntoView({block:"start"});
   };
   ix.addEventListener("pointerdown", e => { active = true; try { ix.setPointerCapture(e.pointerId); } catch(_){} jump(e.clientY); e.preventDefault(); });
@@ -432,6 +434,14 @@ function toggleIn(set, all, k){
   const s = new Set(set); s.has(k) ? s.delete(k) : s.add(k);
   return s.size ? s : new Set(all);
 }
+// The pills stay under the header as the page scrolls: --hdr is the header's height (where they
+// stick) and --ctl theirs, kept current as either changes (search opening, pills wrapping), so
+// index jumps land below both.
+(() => {
+  const hdr = document.querySelector("header"), bar = document.querySelector(".ctlbar"), root = document.documentElement.style;
+  const ro = new ResizeObserver(() => { root.setProperty("--hdr", hdr.offsetHeight + "px"); root.setProperty("--ctl", bar.offsetHeight + "px"); });
+  ro.observe(hdr); ro.observe(bar);
+})();
 const phone = matchMedia("(max-width:560px)");
 phone.addEventListener("change", () => { if(data) renderControls(); });
 function renderControls(){
