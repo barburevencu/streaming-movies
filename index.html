@@ -169,8 +169,9 @@
     .bar { flex-wrap:wrap; gap:10px; }
     .logo { font-size:24px; }
     .logo .mark { width:30px; height:30px; }
-    /* Just "Cambokino" on a phone, so an open search fills the rest of the logo's row; 16px text, or iOS zooms in on it. */
-    .logo .lmore { display:none; }
+    /* While search is open the logo is just "Cambokino", so the box fills the rest of its row; 16px text, or iOS zooms in on it. */
+    .bar:has(.srch.open) .logo .lmore { display:none; }
+    .logo .lname { white-space:nowrap; }
     nav { margin-left:0; order:2; width:100%; }
     .srch { order:1; margin-left:auto; }
     .srch.open { flex:1 1 0; min-width:0; }
@@ -186,7 +187,7 @@
 <body data-skin="funk">
 <header><div class="wrap">
   <div class="bar">
-    <a class="logo" href="./"><img class="mark" src="favicon.svg" alt="">Cambokino<span class="lmore"> Movies</span></a>
+    <a class="logo" href="./"><img class="mark" src="favicon.svg" alt=""><span class="lname">Cambokino<span class="lmore"> Movies</span></span></a>
     <nav id="tabs">
       <button class="tab active" data-view="posters">Posters</button>
       <button class="tab" data-view="list">List</button>
