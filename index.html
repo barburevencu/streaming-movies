@@ -16,14 +16,14 @@
 <meta name="twitter:title" content="Cambokino Movies">
 <meta name="twitter:description" content="Every movie streaming at Cambokino, refreshed weekly">
 <meta name="twitter:image" content="https://barburevencu.github.io/streaming-movies/og.png">
-<link rel="icon" type="image/svg+xml" href="favicon.svg?v=2">
+<link rel="icon" type="image/svg+xml" href="favicon.svg?v=3">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:opsz,wght,SOFT,WONK@9..144,800,100,1&family=Monoton&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:opsz,wght,SOFT,WONK@9..144,800,100,1&family=Titan+One&display=swap">
 <style>
   /* Funk: a 70s video-store wall. Cream and brown by day, chocolate after sunset in Paris. */
-  :root { --maxw:1120px; --mono:"DM Mono",ui-monospace,monospace; --display:"Monoton",cursive; --title:"Fraunces",Georgia,serif; }
+  :root { --maxw:1120px; --mono:"DM Mono",ui-monospace,monospace; --display:"Titan One",cursive; --title:"Fraunces",Georgia,serif; }
   body[data-skin="funk"] {
     --bg:#f6ead2; --card:#fff8ea; --fg:#3b1f12; --muted:#8a6a52; --faint:#c9b597; --line:#3b1f12;
     --o:#e5532d; --y:#f2a93b; --t:#1f8a84; --p:#c23b6b; --accent-text:#c23b6b; --shadow:#e5532d; color-scheme:light;
@@ -38,14 +38,16 @@
   .wrap { max-width:var(--maxw); margin:0 auto; padding:0 24px; }
   a { color:inherit; }
 
-  /* Header with the four-stripe band underneath. */
-  header { position:sticky; top:0; z-index:10; background:var(--bg); }
-  header::after { content:""; display:block; height:18px;
-    background:linear-gradient(var(--fg) 0 25%, var(--o) 25% 50%, var(--y) 50% 75%, var(--t) 75%); }
+  /* Header: the four stripes live in the title now, so just a hairline underneath. */
+  header { position:sticky; top:0; z-index:10; background:var(--bg); border-bottom:1.5px solid var(--faint); }
   .bar { display:flex; align-items:center; gap:20px; padding:14px 0 12px; }
-  /* The logo: "cambokino" in Monoton, whose striped letters echo the band. */
-  .logo { display:flex; align-items:center; gap:10px; font-family:var(--display); font-size:30px; line-height:1; text-decoration:none;
-          color:var(--o); white-space:nowrap; }
+  /* The logo: "cambokino" in Titan One, its letters filled with the four 70s stripes and outlined in ink.
+     At line-height 1.1 the lowercase letters run from 32% to 86% of the line; the stops split that into
+     four even bands, the ink one also taking the tops of b and k. */
+  .logo { display:block; font-family:var(--display); font-size:34px; line-height:1.1; text-decoration:none; white-space:nowrap;
+          padding:0 2px; color:transparent; -webkit-text-stroke:1.5px var(--fg);
+          background:linear-gradient(var(--fg) 0 46%, var(--o) 46% 59%, var(--y) 59% 72.5%, var(--t) 72.5%);
+          -webkit-background-clip:text; background-clip:text; }
   /* Posters and List: a grid and a list icon beside the search, the one showing in orange. */
   nav { margin-left:auto; display:flex; gap:4px; }
   .tab { display:flex; cursor:pointer; color:var(--faint); padding:4px; border:0; background:none; }
@@ -92,9 +94,16 @@
   .pill[data-tspdt].on { background:var(--y); color:#3b1f12; }
   .pill[data-watched].on { background:var(--t); color:#fff8ea; }
   .pill[data-watchlist].on { background:var(--p); color:#fff8ea; }
-  .sels { margin-left:auto; }
   body:has(#mindex.on) .controls { padding-right:var(--idxw,0px); }
-  .sel { font:500 12px var(--mono); border:2px solid var(--fg); border-radius:999px; padding:5px 10px; background:var(--card); color:var(--fg); cursor:pointer; }
+  /* The sort: a segmented bar like the filters, "Sort" then the current order with a drawn chevron.
+     The <select> itself is kept (bare) so phones still open their own picker. */
+  .sels { margin-left:auto; position:relative; }
+  .slabel { display:flex; align-items:center; padding:5px 13px; font:700 12px var(--mono); text-transform:uppercase; letter-spacing:.06em; }
+  .sel { appearance:none; -webkit-appearance:none; font:500 12px var(--mono); color:var(--fg); background:transparent; border:0;
+         border-left:1.5px solid var(--fg); padding:5px 32px 5px 13px; cursor:pointer; border-radius:0; }
+  .sel:focus-visible { outline:none; box-shadow:inset 0 0 0 99px rgba(0,0,0,.08); }
+  .sels::after { content:""; position:absolute; right:14px; top:50%; width:6px; height:6px; margin-top:-5px; pointer-events:none;
+                 border:solid var(--fg); border-width:0 2px 2px 0; transform:rotate(45deg); }
 
   /* The wall: posters as tape boxes on a shelf. */
   main { padding:16px 0 40px; }
@@ -177,10 +186,10 @@
     .pills.swipe::-webkit-scrollbar { display:none; }
     .pills.swipe > * { flex:none; }
     .bar { flex-wrap:wrap; gap:10px; }
-    .logo { font-size:24px; }
+    .logo { font-size:28px; -webkit-text-stroke-width:1.2px; }
     /* An open search fills the rest of the logo's row, the logo shrinking and the view icons stepping aside to
        make room; 16px text, or iOS zooms in on it. */
-    .bar:has(.srch.open) .logo { font-size:19px; }
+    .bar:has(.srch.open) .logo { font-size:22px; }
     .bar:has(.srch.open) nav { display:none; }
     .srch.open { flex:1 1 0; min-width:0; }
     .srch.open .search { width:100%; font-size:16px; padding:6px 14px; }
@@ -457,6 +466,14 @@ function toggleIn(set, all, k){
 })();
 const phone = matchMedia("(max-width:560px)");
 phone.addEventListener("change", () => { if(data) renderControls(); });
+// A <select> is as wide as its longest option; size the sort to the one chosen, plus its padding.
+let _measure;
+function fitSel(sel){
+  _measure ||= document.createElement("canvas").getContext("2d");
+  _measure.font = getComputedStyle(sel).font;
+  sel.style.width = Math.ceil(_measure.measureText(sel.selectedOptions[0]?.text || "").width) + 13 + 32 + 2 + "px";
+}
+document.fonts?.ready.then(() => { const sel = document.getElementById("sort"); if(sel) fitSel(sel); });
 function renderControls(){
   const svc = allPlatforms();
   const allYears = state.yearBuckets.size === YEAR_BUCKETS.length;
@@ -470,15 +487,16 @@ function renderControls(){
   const yearChoices = state.yearOpen ? YEAR_BUCKETS.map(b => p(state.yearBuckets.has(b.k) ? "" : "off", `data-y="${b.k}"`, b.label)).join("") : "";
   const sortSel = `<select id="sort" class="sel" aria-label="Sort movies">` +
     SORT_OPTS.filter(([v]) => v !== "tspdt" || tspdt.size).map(([v, l]) => `<option value="${v}">${l}</option>`).join("") + `</select>`;
-  const sels = `<div class="sels">${sortSel}</div>`;
+  const sels = `<div class="sels seg"><span class="slabel">Sort</span>${sortSel}</div>`;
   // Rows as on Paris Cinemas: Platforms' choices open beside it, and Year (then TSPDT and the rest)
-  // drops to its own row; the sort ends the last row. On a phone each row is one line you swipe.
+  // drops to its own row. The sort stays at the right of the first row on a computer, and ends the
+  // last row on a phone, where each row is one line you swipe.
   // Each filter with its choices, and the toggles together, make one segmented bar.
   const seg = h => h ? `<span class="seg">${h}</span>` : "";
   const svcBtn = seg(svcAll + svcChoices), yearBtn = seg(yearAll + yearChoices) + (state.yearOpen ? "" : seg(tspdtPill));
   const rows = state.platformsOpen ? [["svc", svcBtn], ["year", yearBtn]] : [["svc", svcBtn + yearBtn]];
   if(state.yearOpen && tspdtPill) rows.push(["rest", seg(tspdtPill)]);
-  rows[rows.length - 1][1] += sels;
+  rows[phone.matches ? rows.length - 1 : 0][1] += sels;
   const c = document.getElementById("controls");
   // Redrawing would snap a swiped row back to its start; keep where each one was while the
   // rows stay the same (opening or closing Platforms or Year starts them afresh).
@@ -487,7 +505,7 @@ function renderControls(){
   c.innerHTML = rows.map(([k, r]) => phone.matches ? `<div class="pills swipe" data-row="${shape}${k}">${r}</div>` : `<div class="pills">${r}</div>`).join("");
   c.querySelectorAll(".pills[data-row]").forEach(r => { r.scrollLeft = swiped[r.dataset.row] || 0; });
   const sel = c.querySelector("#sort");
-  if(sel){ sel.value = state.sort; sel.onchange = () => { state.sort = sel.value; renderAll(); scrollTo(0, 0); }; }
+  if(sel){ sel.value = state.sort; fitSel(sel); sel.onchange = () => { state.sort = sel.value; renderAll(); scrollTo(0, 0); }; }
   c.onclick = e => {
     const b = e.target.closest(".pill"); if(!b) return;
     const d = b.dataset;
