@@ -224,10 +224,13 @@ const initialState = () => ({ view:"posters", platforms:new Set(), regions:new S
   yearBuckets:new Set(YEAR_BUCKETS.map(b => b.k)), yearOpen:false, tspdtOnly:false, hideWatched:false, watchlistOnly:false, sort:"top", query:"" });
 const state = initialState();
 const allPlatforms = () => data.platforms.map(s => s.name);
+// Platforms left off until picked: the Platforms pill counts as "all" without them, and closing it returns here.
+const OFF_BY_DEFAULT = ["Disney"];
+const defaultPlatforms = () => allPlatforms().filter(s => !OFF_BY_DEFAULT.includes(s));
 const allRegions = () => [...new Set(data.platforms.flatMap(s => s.regions))];
 // A platform we only check in one country (Criterion, Kanopy…) needs no country label.
 const oneRegion = s => data.platforms.find(p => p.name === s)?.regions.length === 1;
-function resetFilters(){ state.platforms = new Set(allPlatforms()); state.regions = new Set(allRegions()); }
+function resetFilters(){ state.platforms = new Set(defaultPlatforms()); state.regions = new Set(allRegions()); }
 
 function esc(s){ return String(s == null ? "" : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 const foldTitle = s => (s || "").normalize("NFD").replace(/[^\p{L}\p{N}]/gu, "").toLowerCase();
@@ -450,7 +453,7 @@ function renderControls(){
   const svc = allPlatforms();
   const allYears = state.yearBuckets.size === YEAR_BUCKETS.length;
   const p = (cls, attrs, label, title) => `<button class="pill ${cls}" ${attrs}${title ? ` title="${esc(title)}"` : ""}>${esc(label)}</button>`;
-  const svcAll = p("all" + (state.platforms.size === svc.length ? " on" : ""), `data-svcall="1"`, "Platforms");
+  const svcAll = p("all" + (defaultPlatforms().every(s => state.platforms.has(s)) ? " on" : ""), `data-svcall="1"`, "Platforms");
   const svcChoices = state.platformsOpen ? svc.map(s => p(state.platforms.has(s) ? "" : "off", `data-s="${esc(s)}"`, s)).join("") : "";
   const tspdtPill = (tspdt.size ? p("all" + (state.tspdtOnly ? " on" : ""), `data-tspdt="1"`, "TSPDT", "Only films in TSPDT's 1,000 Greatest Films, with their rank") : "") +
     (watched.size ? p("all" + (state.hideWatched ? " on" : ""), `data-watched="1"`, "Unseen") : "") +
@@ -460,27 +463,25 @@ function renderControls(){
   const sortSel = `<select id="sort" class="sel" aria-label="Sort movies">` +
     SORT_OPTS.filter(([v]) => v !== "tspdt" || tspdt.size).map(([v, l]) => `<option value="${v}">${l}</option>`).join("") + `</select>`;
   const sels = `<div class="sels">${sortSel}</div>`;
-  // Rows as [key, pills]. On a phone every pill and the sort sit on one row you swipe, and an open
-  // Platforms or Year puts its choices on a swipeable row of their own beneath, so nothing above moves.
-  let rows;
-  if(phone.matches) rows = [["main", svcAll + yearAll + tspdtPill + sels], ["svc", svcChoices], ["year", yearChoices]].filter(([, r]) => r);
-  else {
-    const svcBtn = svcAll + svcChoices, yearBtn = yearAll + (state.yearOpen ? yearChoices : tspdtPill);
-    rows = (state.platformsOpen ? [svcBtn, yearBtn] : [svcBtn + yearBtn]).map(r => ["", r]);
-    if(state.yearOpen && tspdtPill) rows.push(["", tspdtPill]);
-    rows[rows.length - 1][1] += sels;
-  }
+  // Rows as on Paris Cinemas: Platforms' choices open beside it, and Year (then TSPDT and the rest)
+  // drops to its own row; the sort ends the last row. On a phone each row is one line you swipe.
+  const svcBtn = svcAll + svcChoices, yearBtn = yearAll + (state.yearOpen ? yearChoices : tspdtPill);
+  const rows = state.platformsOpen ? [["svc", svcBtn], ["year", yearBtn]] : [["svc", svcBtn + yearBtn]];
+  if(state.yearOpen && tspdtPill) rows.push(["rest", tspdtPill]);
+  rows[rows.length - 1][1] += sels;
   const c = document.getElementById("controls");
-  // Redrawing would snap a swiped row back to its start; keep where each one was.
+  // Redrawing would snap a swiped row back to its start; keep where each one was while the
+  // rows stay the same (opening or closing Platforms or Year starts them afresh).
+  const shape = `${state.platformsOpen}${state.yearOpen}`;
   const swiped = Object.fromEntries([...c.querySelectorAll(".pills[data-row]")].map(r => [r.dataset.row, r.scrollLeft]));
-  c.innerHTML = rows.map(([k, r]) => k ? `<div class="pills swipe" data-row="${k}">${r}</div>` : `<div class="pills">${r}</div>`).join("");
+  c.innerHTML = rows.map(([k, r]) => phone.matches ? `<div class="pills swipe" data-row="${shape}${k}">${r}</div>` : `<div class="pills">${r}</div>`).join("");
   c.querySelectorAll(".pills[data-row]").forEach(r => { r.scrollLeft = swiped[r.dataset.row] || 0; });
   const sel = c.querySelector("#sort");
   if(sel){ sel.value = state.sort; sel.onchange = () => { state.sort = sel.value; renderAll(); scrollTo(0, 0); }; }
   c.onclick = e => {
     const b = e.target.closest(".pill"); if(!b) return;
     const d = b.dataset;
-    if(d.svcall){ state.platformsOpen = !state.platformsOpen; if(!state.platformsOpen) state.platforms = new Set(svc); }
+    if(d.svcall){ state.platformsOpen = !state.platformsOpen; if(!state.platformsOpen) state.platforms = new Set(defaultPlatforms()); }
     else if(d.s) state.platforms = toggleIn(state.platforms, svc, d.s);
     else if(d.yall){ state.yearOpen = !state.yearOpen; if(!state.yearOpen) state.yearBuckets = new Set(YEAR_BUCKETS.map(b => b.k)); }
     else if(d.y) state.yearBuckets = toggleIn(state.yearBuckets, YEAR_BUCKETS.map(b => b.k), d.y);
