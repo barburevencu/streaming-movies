@@ -9,21 +9,22 @@
 <meta property="og:description" content="Every movie streaming at Cambokino, refreshed weekly">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://barburevencu.github.io/streaming-movies/">
-<meta property="og:image" content="https://barburevencu.github.io/streaming-movies/og.png">
+<meta property="og:image" content="https://barburevencu.github.io/streaming-movies/og.png?v=2">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Cambokino Movies">
 <meta name="twitter:description" content="Every movie streaming at Cambokino, refreshed weekly">
-<meta name="twitter:image" content="https://barburevencu.github.io/streaming-movies/og.png">
+<meta name="twitter:image" content="https://barburevencu.github.io/streaming-movies/og.png?v=2">
+<link rel="icon" type="image/png" sizes="64x64" href="favicon.png?v=3">
 <link rel="icon" type="image/svg+xml" href="favicon.svg?v=3">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:opsz,wght,SOFT,WONK@9..144,800,100,1&family=Titan+One&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:opsz,wght,SOFT,WONK@9..144,800,100,1&family=Tinos&display=swap">
 <style>
   /* Funk: a 70s video-store wall. Cream and brown by day, chocolate after sunset in Paris. */
-  :root { --maxw:1120px; --mono:"DM Mono",ui-monospace,monospace; --display:"Titan One",cursive; --title:"Fraunces",Georgia,serif; }
+  :root { --maxw:1120px; --mono:"DM Mono",ui-monospace,monospace; --display:Times,"Times New Roman",Tinos,serif; --title:"Fraunces",Georgia,serif; }
   body[data-skin="funk"] {
     --bg:#f6ead2; --card:#fff8ea; --fg:#3b1f12; --muted:#8a6a52; --faint:#c9b597; --line:#3b1f12;
     --o:#e5532d; --y:#f2a93b; --t:#1f8a84; --p:#c23b6b; --accent-text:#c23b6b; --shadow:#e5532d; color-scheme:light;
@@ -41,11 +42,11 @@
   /* Header: the four stripes live in the title now, so just a hairline underneath. */
   header { position:sticky; top:0; z-index:10; background:var(--bg); border-bottom:1.5px solid var(--faint); }
   .bar { display:flex; align-items:center; gap:20px; padding:14px 0 12px; }
-  /* The logo: "cambokino" in Titan One, its letters filled with the four 70s stripes and outlined in ink.
-     At line-height 1.1 the lowercase letters run from 32% to 86% of the line; the stops split that into
-     four even bands, the ink one also taking the tops of b and k. */
-  .logo { display:block; font-family:var(--display); font-size:34px; line-height:1.1; text-decoration:none; white-space:nowrap;
-          padding:0 2px; color:transparent; -webkit-text-stroke:1.5px var(--fg);
+  /* The logo: "cambokino" in Times (Tinos where there's no Times), its letters outlined in ink and filled
+     with the four 70s stripes: ink over the top half, then orange, mustard and teal. Bold, so the strokes
+     are wide enough to show the colours at header size. */
+  .logo { display:block; font-family:var(--display); font-weight:700; font-size:42px; line-height:1.1; text-decoration:none; white-space:nowrap;
+          padding:0 2px; color:transparent; -webkit-text-stroke:1.3px var(--fg);
           background:linear-gradient(var(--fg) 0 46%, var(--o) 46% 59%, var(--y) 59% 72.5%, var(--t) 72.5%);
           -webkit-background-clip:text; background-clip:text; }
   /* Posters and List: a grid and a list icon beside the search, the one showing in orange. */
@@ -186,10 +187,9 @@
     .pills.swipe::-webkit-scrollbar { display:none; }
     .pills.swipe > * { flex:none; }
     .bar { flex-wrap:wrap; gap:10px; }
-    .logo { font-size:28px; -webkit-text-stroke-width:1.2px; }
-    /* An open search fills the rest of the logo's row, the logo shrinking and the view icons stepping aside to
-       make room; 16px text, or iOS zooms in on it. */
-    .bar:has(.srch.open) .logo { font-size:22px; }
+    .logo { font-size:34px; -webkit-text-stroke-width:1px; }
+    /* An open search fills what's left of the logo's row, the view icons stepping aside to make room
+       (the logo keeps its size); 16px text, or iOS zooms in on it. */
     .bar:has(.srch.open) nav { display:none; }
     .srch.open { flex:1 1 0; min-width:0; }
     .srch.open .search { width:100%; font-size:16px; padding:6px 14px; }
