@@ -20,10 +20,10 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:opsz,wght,SOFT,WONK@9..144,800,100,1&family=Shrikhand&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:opsz,wght,SOFT,WONK@9..144,800,100,1&family=Monoton&display=swap">
 <style>
   /* Funk: a 70s video-store wall. Cream and brown by day, chocolate after sunset in Paris. */
-  :root { --maxw:1120px; --mono:"DM Mono",ui-monospace,monospace; --display:"Shrikhand",cursive; --title:"Fraunces",Georgia,serif; }
+  :root { --maxw:1120px; --mono:"DM Mono",ui-monospace,monospace; --display:"Monoton",cursive; --title:"Fraunces",Georgia,serif; }
   body[data-skin="funk"] {
     --bg:#f6ead2; --card:#fff8ea; --fg:#3b1f12; --muted:#8a6a52; --faint:#c9b597; --line:#3b1f12;
     --o:#e5532d; --y:#f2a93b; --t:#1f8a84; --p:#c23b6b; --accent-text:#c23b6b; --shadow:#e5532d; color-scheme:light;
@@ -43,17 +43,18 @@
   header::after { content:""; display:block; height:18px;
     background:linear-gradient(var(--fg) 0 25%, var(--o) 25% 50%, var(--y) 50% 75%, var(--t) 75%); }
   .bar { display:flex; align-items:center; gap:20px; padding:14px 0 12px; }
-  .logo { display:flex; align-items:center; gap:10px; font-family:var(--display); font-size:30px; line-height:1; text-decoration:none; color:var(--o);
-          text-shadow:2px 2px 0 var(--fg), 4px 4px 0 var(--y); letter-spacing:.01em; transform:rotate(-2deg); }
-  .logo .mark { width:38px; height:38px; flex:0 0 auto; filter:drop-shadow(2px 2px 0 var(--y)); }
-  nav { margin-left:auto; display:flex; gap:6px; }
-  .tab { cursor:pointer; color:var(--fg); padding:6px 14px; border:2px solid transparent; border-radius:999px;
-         background:none; font:500 12px var(--mono); text-transform:uppercase; letter-spacing:.08em; }
+  /* The logo: "cambokino" in Monoton, whose striped letters echo the band. */
+  .logo { display:flex; align-items:center; gap:10px; font-family:var(--display); font-size:30px; line-height:1; text-decoration:none;
+          color:var(--o); white-space:nowrap; }
+  /* Posters and List: a grid and a list icon beside the search, the one showing in orange. */
+  nav { margin-left:auto; display:flex; gap:4px; }
+  .tab { display:flex; cursor:pointer; color:var(--faint); padding:4px; border:0; background:none; }
+  .tab svg { width:20px; height:20px; }
   /* Hover effects only with a mouse: a phone keeps :hover on the last thing tapped. */
   @media (hover:hover) {
-    .tab:hover { border-color:var(--fg); }
+    .tab:hover { color:var(--fg); }
   }
-  .tab.active { background:var(--fg); color:var(--bg); }
+  .tab.active { color:var(--o); }
   .srch { display:flex; align-items:center; }
   .sicon { display:flex; cursor:pointer; background:none; border:0; padding:4px; color:var(--fg); }
   .sicon svg { width:18px; height:18px; }
@@ -74,6 +75,15 @@
   /* The same lift while a finger is on the pill (set in JS: :active needs a touch listener on iOS). */
   .pill.pressed { transform:translateY(-1px); box-shadow:2px 2px 0 var(--fg); }
   .pill.off { color:var(--muted); border-color:var(--faint); background:transparent; }
+  /* Segmented bars: a filter and its choices, or the on/off toggles, joined into one strip, the
+     pills inside it divided by thin lines. A press or hover darkens a segment rather than lifting it. */
+  .seg { display:inline-flex; border:2px solid var(--fg); border-radius:999px; overflow:hidden; background:var(--card); }
+  .seg .pill { border:0; border-radius:0; }
+  .seg .pill + .pill { border-left:1.5px solid var(--fg); }
+  .seg .pill.pressed { transform:none; box-shadow:inset 0 0 0 99px rgba(0,0,0,.1); }
+  @media (hover:hover) {
+    .seg .pill:hover { transform:none; box-shadow:inset 0 0 0 99px rgba(0,0,0,.08); }
+  }
   .pill.all { font-weight:700; text-transform:uppercase; letter-spacing:.06em; }
   /* Left to right the pills follow the header stripes (ink, orange, yellow, teal), then pink. */
   .pill.all.on { background:var(--o); color:#fff8ea; }
@@ -168,12 +178,10 @@
     .pills.swipe > * { flex:none; }
     .bar { flex-wrap:wrap; gap:10px; }
     .logo { font-size:24px; }
-    .logo .mark { width:30px; height:30px; }
-    /* While search is open the logo is just "Cambokino", so the box fills the rest of its row; 16px text, or iOS zooms in on it. */
-    .bar:has(.srch.open) .logo .lmore { display:none; }
-    .logo .lname { white-space:nowrap; }
-    nav { margin-left:0; order:2; width:100%; }
-    .srch { order:1; margin-left:auto; }
+    /* An open search fills the rest of the logo's row, the logo shrinking and the view icons stepping aside to
+       make room; 16px text, or iOS zooms in on it. */
+    .bar:has(.srch.open) .logo { font-size:19px; }
+    .bar:has(.srch.open) nav { display:none; }
     .srch.open { flex:1 1 0; min-width:0; }
     .srch.open .search { width:100%; font-size:16px; padding:6px 14px; }
     #view { grid-template-columns:repeat(2, minmax(0, 1fr)); gap:26px 18px; }
@@ -187,10 +195,10 @@
 <body data-skin="funk">
 <header><div class="wrap">
   <div class="bar">
-    <a class="logo" href="./"><img class="mark" src="favicon.svg" alt=""><span class="lname">Cambokino<span class="lmore"> Movies</span></span></a>
+    <a class="logo" href="./" aria-label="Cambokino Movies">cambokino</a>
     <nav id="tabs">
-      <button class="tab active" data-view="posters">Posters</button>
-      <button class="tab" data-view="list">List</button>
+      <button class="tab active" data-view="posters" aria-label="Posters" title="Posters"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="2.5" width="6" height="6" rx="1.5"/><rect x="11.5" y="2.5" width="6" height="6" rx="1.5"/><rect x="2.5" y="11.5" width="6" height="6" rx="1.5"/><rect x="11.5" y="11.5" width="6" height="6" rx="1.5"/></svg></button>
+      <button class="tab" data-view="list" aria-label="List" title="List"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 5h14M3 10h14M3 15h14"/></svg></button>
     </nav>
     <div class="srch" id="srch">
       <button class="sicon" id="sicon" type="button" aria-label="Search" title="Search (/)">
@@ -465,9 +473,11 @@ function renderControls(){
   const sels = `<div class="sels">${sortSel}</div>`;
   // Rows as on Paris Cinemas: Platforms' choices open beside it, and Year (then TSPDT and the rest)
   // drops to its own row; the sort ends the last row. On a phone each row is one line you swipe.
-  const svcBtn = svcAll + svcChoices, yearBtn = yearAll + (state.yearOpen ? yearChoices : tspdtPill);
+  // Each filter with its choices, and the toggles together, make one segmented bar.
+  const seg = h => h ? `<span class="seg">${h}</span>` : "";
+  const svcBtn = seg(svcAll + svcChoices), yearBtn = seg(yearAll + yearChoices) + (state.yearOpen ? "" : seg(tspdtPill));
   const rows = state.platformsOpen ? [["svc", svcBtn], ["year", yearBtn]] : [["svc", svcBtn + yearBtn]];
-  if(state.yearOpen && tspdtPill) rows.push(["rest", tspdtPill]);
+  if(state.yearOpen && tspdtPill) rows.push(["rest", seg(tspdtPill)]);
   rows[rows.length - 1][1] += sels;
   const c = document.getElementById("controls");
   // Redrawing would snap a swiped row back to its start; keep where each one was while the
