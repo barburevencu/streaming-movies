@@ -21,10 +21,10 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:opsz,wght,SOFT,WONK@9..144,800,100,1&family=Tinos&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Righteous&family=Fraunces:opsz,wght,SOFT,WONK@9..144,800,100,1&family=Tinos&display=swap">
 <style>
   /* Funk: a 70s video-store wall. Cream and brown by day, chocolate after sunset in Paris. */
-  :root { --maxw:1120px; --mono:"DM Mono",ui-monospace,monospace; --display:Times,"Times New Roman",Tinos,serif; --title:"Fraunces",Georgia,serif; }
+  :root { --maxw:1120px; --mono:"DM Mono",ui-monospace,monospace; --pillf:Righteous,"DM Mono",ui-monospace,monospace; --display:Times,"Times New Roman",Tinos,serif; --title:"Fraunces",Georgia,serif; }
   body[data-skin="funk"] {
     --bg:#f6ead2; --card:#fff8ea; --fg:#3b1f12; --muted:#8a6a52; --faint:#c9b597; --line:#3b1f12;
     --o:#e5532d; --y:#f2a93b; --t:#1f8a84; --p:#c23b6b; --accent-text:#c23b6b; --shadow:#e5532d; color-scheme:light;
@@ -65,12 +65,16 @@
   .search { width:180px; font:13px var(--mono); color:var(--fg); background:var(--card);
             border:2px solid var(--fg); border-radius:999px; padding:6px 14px; }
   .search:focus { outline:none; box-shadow:3px 3px 0 var(--o); }
+  /* Safari draws type="search" as its own search field, ignoring the height and padding set here;
+     plain styling makes every browser size the box the same way. */
+  .search { -webkit-appearance:none; appearance:none; margin:0; }
+  .search::-webkit-search-decoration { -webkit-appearance:none; }
 
   .controls { display:flex; flex-direction:column; gap:10px; padding:22px 0 4px; }
   /* The pills stick under the header while the films scroll beneath them. */
   .ctlbar { position:sticky; top:var(--hdr,0px); z-index:9; background:var(--bg); padding-bottom:12px; }
   .pills { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
-  .pill { cursor:pointer; border:2px solid var(--fg); border-radius:999px; padding:5px 13px; font:500 12px var(--mono);
+  .pill { cursor:pointer; border:2px solid var(--fg); border-radius:999px; padding:5px 13px; font:400 12px var(--pillf);
           background:var(--card); color:var(--fg); transition:transform .1s; }
   @media (hover:hover) {
     .pill:hover { transform:translateY(-1px); box-shadow:2px 2px 0 var(--fg); }
@@ -87,7 +91,7 @@
   @media (hover:hover) {
     .seg .pill:hover { transform:none; box-shadow:inset 0 0 0 99px rgba(0,0,0,.08); }
   }
-  .pill.all { font-weight:700; text-transform:uppercase; letter-spacing:.06em; }
+  .pill.all { font-weight:400; text-transform:uppercase; letter-spacing:.06em; }
   /* Left to right the pills follow the header stripes (ink, orange, yellow, teal), then pink. */
   .pill.all.on { background:var(--o); color:#fff8ea; }
   .pill[data-svcall].on { background:var(--fg); color:var(--bg); }
@@ -99,8 +103,8 @@
   /* The sort: a segmented bar like the filters, "Sort" then the current order with a drawn chevron.
      The <select> itself is kept (bare) so phones still open their own picker. */
   .sels { margin-left:auto; position:relative; }
-  .slabel { display:flex; align-items:center; padding:5px 13px; font:700 12px var(--mono); text-transform:uppercase; letter-spacing:.06em; }
-  .sel { appearance:none; -webkit-appearance:none; font:500 12px var(--mono); color:var(--fg); background:transparent; border:0;
+  .slabel { display:flex; align-items:center; padding:5px 13px; font:700 12px var(--pillf); text-transform:uppercase; letter-spacing:.06em; }
+  .sel { appearance:none; -webkit-appearance:none; font:400 12px var(--pillf); color:var(--fg); background:transparent; border:0;
          border-left:1.5px solid var(--fg); padding:5px 32px 5px 13px; cursor:pointer; border-radius:0; }
   .sel:focus-visible { outline:none; box-shadow:inset 0 0 0 99px rgba(0,0,0,.08); }
   .sels::after { content:""; position:absolute; right:14px; top:50%; width:6px; height:6px; margin-top:-5px; pointer-events:none;
@@ -113,7 +117,7 @@
   .film { display:flex; flex-direction:column; position:relative; }
   .film:nth-child(4n+1) { --shadow:var(--o); } .film:nth-child(4n+2) { --shadow:var(--y); }
   .film:nth-child(4n+3) { --shadow:var(--t); } .film:nth-child(4n) { --shadow:var(--p); }
-  .poster { display:block; width:100%; aspect-ratio:2/3; object-fit:cover; border:3px solid var(--fg); border-radius:12px;
+  .poster { display:block; width:100%; aspect-ratio:2/3; object-fit:cover; border-radius:12px;
             background:repeating-linear-gradient(45deg, var(--y) 0 10px, var(--o) 10px 20px);
             box-shadow:6px 6px 0 var(--shadow); transition:transform .15s ease, box-shadow .15s ease; }
   @media (hover:hover) {
@@ -127,7 +131,7 @@
   @media (hover:hover) {
     .ti a:hover { color:var(--accent-text); }
   }
-  .by { color:var(--muted); font-size:11.5px; line-height:1.5; margin-top:3px; }
+  .by { color:var(--muted); font-size:9.75px; line-height:1.5; margin-top:3px; }
   .morig { font-style:italic; }
   /* Short credits on a small card: no original title; runtime and genres below, as on Paris Cinemas (not on phones). */
   .by > .ph-hide:has(.morig) { display:none; }
@@ -140,8 +144,8 @@
             font:700 10.5px var(--mono); text-transform:uppercase; letter-spacing:.08em; border:2px solid var(--fg); transform:rotate(-6deg); }
   /* Platforms: little stickers. */
   .where { display:flex; flex-wrap:wrap; gap:5px; margin-top:8px; }
-  .where a { text-decoration:none; font:500 10.5px var(--mono); padding:2px 8px; border-radius:999px;
-             border:1.5px solid var(--fg); background:var(--card); white-space:nowrap; }
+  .where a { text-decoration:none; font:400 10.5px var(--pillf); padding:2px 8px; border-radius:999px;
+             border:1px solid var(--fg); background:var(--card); white-space:nowrap; }
   @media (hover:hover) {
     .where a:hover { transform:rotate(-3deg); }
   }
@@ -191,8 +195,15 @@
     /* An open search fills what's left of the logo's row, the view icons stepping aside to make room
        (the logo keeps its size); 16px text, or iOS zooms in on it. */
     .bar:has(.srch.open) nav { display:none; }
-    .srch.open { flex:1 1 0; min-width:0; }
-    .srch.open .search { width:100%; font-size:16px; padding:6px 14px; }
+    /* The open box is as tall as "cambokino" (23.5px at 34px Times, tops of b and k to the baseline),
+       the text centred inside, and centred on the logo's lowercase o. It's placed from the baseline,
+       which every browser agrees on (Safari and Chrome put Times differently within its line box).
+       With the typed text's baseline on the logo's, the box's bottom is 6.25px below the baseline
+       (2px border + 1.75px padding + 2.5px of DM Mono under its baseline), so its middle is 5.5px
+       above it; the o's middle is 7.8px above it, so the box moves up 2.25px. */
+    .bar:has(.srch.open) { align-items:baseline; }
+    .srch.open { flex:1 1 0; min-width:0; position:relative; top:-2.25px; }
+    .srch.open .search { width:100%; height:23.5px; font-size:16px; line-height:1; padding:0 12px; }
     #view { grid-template-columns:repeat(2, minmax(0, 1fr)); gap:26px 18px; }
     .by .ph-hide, .mdet { display:none; }
     .lrow { flex-wrap:wrap; }
@@ -207,7 +218,7 @@
     <a class="logo" href="./" aria-label="Cambokino Movies">cambokino</a>
     <nav id="tabs">
       <button class="tab active" data-view="posters" aria-label="Posters" title="Posters"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="2.5" width="6" height="6" rx="1.5"/><rect x="11.5" y="2.5" width="6" height="6" rx="1.5"/><rect x="2.5" y="11.5" width="6" height="6" rx="1.5"/><rect x="11.5" y="11.5" width="6" height="6" rx="1.5"/></svg></button>
-      <button class="tab" data-view="list" aria-label="List" title="List"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 5h14M3 10h14M3 15h14"/></svg></button>
+      <button class="tab" data-view="list" aria-label="List" title="List"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 3.5h14M3 10h14M3 16.5h14"/></svg></button>
     </nav>
     <div class="srch" id="srch">
       <button class="sicon" id="sicon" type="button" aria-label="Search" title="Search (/)">
