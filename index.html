@@ -21,17 +21,17 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Righteous&family=Fraunces:opsz,wght,SOFT,WONK@9..144,800,100,1&family=Tinos&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Onest:wght@700&family=Playfair+Display:wght@900&family=Syne:wght@700&display=swap">
 <style>
   /* Funk: a 70s video-store wall. Cream and brown by day, chocolate after sunset in Paris. */
-  :root { --maxw:1120px; --mono:"DM Mono",ui-monospace,monospace; --pillf:Righteous,"DM Mono",ui-monospace,monospace; --display:Times,"Times New Roman",Tinos,serif; --title:"Fraunces",Georgia,serif; }
+  :root { --maxw:1120px; --mono:Inter,system-ui,sans-serif; --pillf:Onest,Inter,system-ui,sans-serif; --display:"Playfair Display",Georgia,serif; --title:Syne,Inter,system-ui,sans-serif; }
   body[data-skin="funk"] {
     --bg:#f6ead2; --card:#fff8ea; --fg:#3b1f12; --muted:#8a6a52; --faint:#c9b597; --line:#3b1f12;
-    --o:#e5532d; --y:#f2a93b; --t:#1f8a84; --p:#c23b6b; --accent-text:#c23b6b; --shadow:#e5532d; color-scheme:light;
+    --kino:#7a1f2b; --o:#e5532d; --y:#f2a93b; --t:#1f8a84; --p:#c23b6b; --accent-text:#c23b6b; --shadow:#e5532d; color-scheme:light;
   }
   body[data-skin="funknight"] {
     --bg:#22130c; --card:#2f1b11; --fg:#f6ead2; --muted:#b39478; --faint:#6b4e3a; --line:#f6ead2;
-    --o:#ff6a3d; --y:#ffb648; --t:#3ec1b8; --p:#ff5c93; --accent-text:#ffb648; --shadow:#ff6a3d; color-scheme:dark;
+    --kino:#8a2736; --o:#ff6a3d; --y:#ffb648; --t:#3ec1b8; --p:#ff5c93; --accent-text:#ffb648; --shadow:#ff6a3d; color-scheme:dark;
   }
   * { box-sizing:border-box; margin:0; padding:0; }
   html { -webkit-font-smoothing:antialiased; }
@@ -41,14 +41,15 @@
 
   /* Header: the four stripes live in the title now, so just a hairline underneath. */
   header { position:sticky; top:0; z-index:10; background:var(--bg); border-bottom:1.5px solid var(--faint); }
-  .bar { display:flex; align-items:center; gap:20px; padding:14px 0 12px; }
-  /* The logo: "cambokino" in Times (Tinos where there's no Times), its letters outlined in ink and filled
-     with the four 70s stripes: ink over the top half, then orange, mustard and teal. Bold, so the strokes
-     are wide enough to show the colours at header size. */
-  .logo { display:block; font-family:var(--display); font-weight:700; font-size:42px; line-height:1.1; text-decoration:none; white-space:nowrap;
-          padding:0 2px; color:transparent; -webkit-text-stroke:1.3px var(--fg);
-          background:linear-gradient(var(--fg) 0 46%, var(--o) 46% 59%, var(--y) 59% 72.5%, var(--t) 72.5%);
-          -webkit-background-clip:text; background-clip:text; }
+  .bar { --lg:42px; display:flex; align-items:center; gap:20px; padding:14px 0 12px; }
+  /* The logo: "cambokino" in Playfair Display Black, flat colour, no outline: burgundy for "cambo",
+     mustard for "kino", in both day and night. */
+  .logo { display:block; font-family:var(--display); font-weight:900; font-size:var(--lg); line-height:1.1; text-decoration:none; white-space:nowrap;
+          padding:0 2px; color:var(--kino); }
+  .logo i { font-style:normal; color:var(--y); }
+  /* The view icons, the magnifier and the open search box sit level with the logo's lowercase letters (the middle of the
+     "o", .148em below the middle of the logo's line box), not with the box, which is higher because of the ascenders. */
+  nav, .srch { position:relative; top:calc(var(--lg) * .148); }
   /* Posters and List: a grid and a list icon beside the search, the one showing in orange. */
   nav { margin-left:auto; display:flex; gap:4px; }
   .tab { display:flex; cursor:pointer; color:var(--faint); padding:4px; border:0; background:none; }
@@ -62,7 +63,7 @@
   .sicon { display:flex; cursor:pointer; background:none; border:0; padding:4px; color:var(--fg); }
   .sicon svg { width:18px; height:18px; }
   .srch.open .sicon, .srch:not(.open) .search { display:none; }
-  .search { width:180px; font:13px var(--mono); color:var(--fg); background:var(--card);
+  .search { width:180px; font:12.5px/1.5 var(--mono); color:var(--fg); background:var(--card);
             border:2px solid var(--fg); border-radius:999px; padding:6px 14px; }
   .search:focus { outline:none; box-shadow:3px 3px 0 var(--o); }
   /* Safari draws type="search" as its own search field, ignoring the height and padding set here;
@@ -74,7 +75,7 @@
   /* The pills stick under the header while the films scroll beneath them. */
   .ctlbar { position:sticky; top:var(--hdr,0px); z-index:9; background:var(--bg); padding-bottom:12px; }
   .pills { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
-  .pill { cursor:pointer; border:2px solid var(--fg); border-radius:999px; padding:5px 13px; font:400 12px var(--pillf);
+  .pill { cursor:pointer; border:2px solid var(--fg); border-radius:999px; padding:5px 13px; font:700 12px var(--pillf);
           background:var(--card); color:var(--fg); transition:transform .1s; }
   @media (hover:hover) {
     .pill:hover { transform:translateY(-1px); box-shadow:2px 2px 0 var(--fg); }
@@ -91,7 +92,7 @@
   @media (hover:hover) {
     .seg .pill:hover { transform:none; box-shadow:inset 0 0 0 99px rgba(0,0,0,.08); }
   }
-  .pill.all { font-weight:400; text-transform:uppercase; letter-spacing:.06em; }
+  .pill.all { font-weight:700; text-transform:uppercase; letter-spacing:.06em; }
   /* Left to right the pills follow the header stripes (ink, orange, yellow, teal), then pink. */
   .pill.all.on { background:var(--o); color:#fff8ea; }
   .pill[data-svcall].on { background:var(--fg); color:var(--bg); }
@@ -104,7 +105,7 @@
      The <select> itself is kept (bare) so phones still open their own picker. */
   .sels { margin-left:auto; position:relative; }
   .slabel { display:flex; align-items:center; padding:5px 13px; font:700 12px var(--pillf); text-transform:uppercase; letter-spacing:.06em; }
-  .sel { appearance:none; -webkit-appearance:none; font:400 12px var(--pillf); color:var(--fg); background:transparent; border:0;
+  .sel { appearance:none; -webkit-appearance:none; font:700 12px var(--pillf); color:var(--fg); background:transparent; border:0;
          border-left:1.5px solid var(--fg); padding:5px 32px 5px 13px; cursor:pointer; border-radius:0; }
   .sel:focus-visible { outline:none; box-shadow:inset 0 0 0 99px rgba(0,0,0,.08); }
   .sels::after { content:""; position:absolute; right:14px; top:50%; width:6px; height:6px; margin-top:-5px; pointer-events:none;
@@ -124,14 +125,14 @@
     .film:hover .poster { transform:rotate(-2deg) translate(-2px,-3px); box-shadow:9px 9px 0 var(--shadow); }
     .film:nth-child(even):hover .poster { transform:rotate(2deg) translate(-2px,-3px); }
   }
-  .info { padding:12px 2px 0; min-width:0; }
-  .ti { font:800 16px/1.15 var(--title); font-variation-settings:"SOFT" 100, "WONK" 1; letter-spacing:-.01em;
+  .info { padding:13px 2px 0; min-width:0; }
+  .ti { font:700 19px/1.15 var(--title); letter-spacing:-.005em;
         overflow-wrap:break-word; }  /* a safety net under breakable() */
   .ti a { text-decoration:none; }
   @media (hover:hover) {
     .ti a:hover { color:var(--accent-text); }
   }
-  .by { color:var(--muted); font-size:9.75px; line-height:1.5; margin-top:3px; }
+  .by { color:var(--muted); font-size:11.5px; line-height:1.45; margin-top:3px; }
   .morig { font-style:italic; }
   /* Short credits on a small card: no original title; runtime and genres below, as on Paris Cinemas (not on phones). */
   .by > .ph-hide:has(.morig) { display:none; }
@@ -143,19 +144,34 @@
   .newtag { position:absolute; top:10px; left:-6px; z-index:2; background:var(--t); color:#fff8ea; padding:2px 8px;
             font:700 10.5px var(--mono); text-transform:uppercase; letter-spacing:.08em; border:2px solid var(--fg); transform:rotate(-6deg); }
   /* Platforms: little stickers. */
-  .where { display:flex; flex-wrap:wrap; gap:5px; margin-top:8px; }
-  .where a { text-decoration:none; font:400 10.5px var(--pillf); padding:2px 8px; border-radius:999px;
+  .where { display:flex; flex-wrap:wrap; gap:5px; margin-top:7px; }
+  .where .sv { cursor:default; user-select:none; -webkit-user-select:none; font:700 11px var(--pillf); padding:2px 8px; border-radius:999px;
              border:1px solid var(--fg); background:var(--card); white-space:nowrap; }
+  /* Countries: a lighter grey after the name, folded away until the pill is opened: with a mouse by hovering it, on a
+     touch screen by tapping it (a tap elsewhere, or on another pill, closes it; JS toggles .open). The pill grows over
+     its neighbours instead of pushing them (its right margin shrinks by the same amount), so nothing around it moves,
+     wraps or flickers. Pills with no countries (.x missing) never react. */
+  .where .sv { position:relative; transition:margin .2s ease, opacity .2s ease; }
+  .where .rg { color:color-mix(in srgb, var(--muted) 60%, var(--card)); display:inline-block; vertical-align:bottom; width:0;
+               margin-left:0; opacity:0; overflow:hidden; white-space:nowrap;
+               transition:width .2s ease, margin-left .2s ease, opacity .2s ease; }
+  .where .sv.x.open { z-index:2; margin-right:calc(-1 * (var(--w, 0px) + 4px)); }
+  .where .sv.x[data-flip].open { margin-right:0; margin-left:calc(-1 * (var(--w) + 4px)); }
+  .where:has(> .sv.x.open) > .sv[data-under] { opacity:.1; }
+  .where .sv.x.open .rg { width:var(--w, 0px); margin-left:4px; opacity:1; }
+  /* The same four rules for hover, only where there is a real hover (a phone keeps :hover on the last thing tapped). */
   @media (hover:hover) {
-    .where a:hover { transform:rotate(-3deg); }
+    .where .sv.x:hover { z-index:2; margin-right:calc(-1 * (var(--w, 0px) + 4px)); }
+    .where .sv.x[data-flip]:hover { margin-right:0; margin-left:calc(-1 * (var(--w) + 4px)); }
+    .where:has(> .sv.x:hover) > .sv[data-under] { opacity:.1; }
+    .where .sv.x:hover .rg { width:var(--w, 0px); margin-left:4px; opacity:1; }
   }
-  .where .rg { opacity:.8; }
 
   /* The list: one film a line, as on the link preview, credits nudged down to sit level with the stickers. */
   #view.list { grid-template-columns:minmax(0, 1fr); gap:0; }
   .lrow { display:flex; align-items:center; gap:6px 18px; padding:11px 0; border-bottom:2px dashed var(--faint); }
   .lmain { display:flex; flex-wrap:wrap; align-items:center; gap:2px 14px; flex:1; min-width:0; }
-  .lrow .ti { font-size:19px; }
+  .lrow .ti { font-size:22px; }
   .lrow .by { margin-top:0; position:relative; top:2px; }
   .lrow .where { margin:0 0 0 auto; justify-content:flex-end; flex:none; max-width:45%; }
   .lrow .tspdt, .lrow .newtag { position:static; display:inline-block; width:auto; height:auto; margin-left:8px; vertical-align:3px; transform:rotate(-4deg); }
@@ -191,22 +207,23 @@
     .pills.swipe::-webkit-scrollbar { display:none; }
     .pills.swipe > * { flex:none; }
     .bar { flex-wrap:wrap; gap:10px; }
-    .logo { font-size:34px; -webkit-text-stroke-width:1px; }
+    .bar { --lg:34px; }
     /* An open search fills what's left of the logo's row, the view icons stepping aside to make room
-       (the logo keeps its size); 16px text, or iOS zooms in on it. */
+       (the logo keeps its size); 13px text, which makes iOS Safari zoom in when the box is focused (16px would not). */
     .bar:has(.srch.open) nav { display:none; }
-    /* The open box is as tall as "cambokino" (23.5px at 34px Times, tops of b and k to the baseline),
-       the text centred inside, and centred on the logo's lowercase o. It's placed from the baseline,
-       which every browser agrees on (Safari and Chrome put Times differently within its line box).
-       With the typed text's baseline on the logo's, the box's bottom is 6.25px below the baseline
-       (2px border + 1.75px padding + 2.5px of DM Mono under its baseline), so its middle is 5.5px
-       above it; the o's middle is 7.8px above it, so the box moves up 2.25px. */
+    /* The open box is 23.5px tall, the text centred inside, and centred on the middle of the logo's lowercase "o". It's placed
+       from the baseline, which every browser agrees on. With the typed text's baseline on the logo's, the box's middle is
+       measured (Playfair Display Black at 34px, Inter text at 13px) to sit 2.1px below the o's middle, so the box moves up
+       4.35px: 2.25px for the original offset plus those 2.1px. */
     .bar:has(.srch.open) { align-items:baseline; }
-    .srch.open { flex:1 1 0; min-width:0; position:relative; top:-2.25px; }
-    .srch.open .search { width:100%; height:23.5px; font-size:16px; line-height:1; padding:0 12px; }
+    .srch.open { flex:1 1 0; min-width:0; position:relative; top:-4.35px; }
+    .srch.open .search { width:100%; height:23.5px; font-size:13px; line-height:1; padding:0 12px; }
     #view { grid-template-columns:repeat(2, minmax(0, 1fr)); gap:26px 18px; }
     .by .ph-hide, .mdet { display:none; }
+    /* Netflix with all six countries is wider than a two-column card in this bold face: a touch smaller on phones. */
+    .where .sv { font-size:10.25px; padding:2px 7px; }
     .lrow { flex-wrap:wrap; }
+    .lrow .ti { font-size:19px; }
     .lmain { flex-basis:100%; }
     .lrow .where { margin-left:0; max-width:none; justify-content:flex-start; }
   }
@@ -215,7 +232,7 @@
 <body data-skin="funk">
 <header><div class="wrap">
   <div class="bar">
-    <a class="logo" href="./" aria-label="Cambokino Movies">cambokino</a>
+    <a class="logo" href="./" aria-label="Cambokino Movies">cambo<i>kino</i></a>
     <nav id="tabs">
       <button class="tab active" data-view="posters" aria-label="Posters" title="Posters"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="2.5" width="6" height="6" rx="1.5"/><rect x="11.5" y="2.5" width="6" height="6" rx="1.5"/><rect x="2.5" y="11.5" width="6" height="6" rx="1.5"/><rect x="11.5" y="11.5" width="6" height="6" rx="1.5"/></svg></button>
       <button class="tab" data-view="list" aria-label="List" title="List"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 3.5h14M3 10h14M3 16.5h14"/></svg></button>
@@ -237,7 +254,6 @@
 <div id="mindex" role="navigation" aria-label="Jump to"></div>
 
 <script>
-const REGION_NAMES = {RO:"Romania", US:"USA", GB:"UK", IT:"Italy", DE:"Germany", FR:"France"};
 const NOW_YEAR = new Date().getFullYear();
 const YEAR_BUCKETS = [
   { k:"new",    label:"New releases", test:y => y >= NOW_YEAR - 1 },
@@ -336,8 +352,7 @@ function posterImg(f){
 const breakable = t => t.replace(/\p{L}{14,}/gu, w => [...w].map((c, i) => i >= 4 && i <= w.length - 4 && i % 3 === 0 ? "\u00AD" + c : c).join(""));
 function stickers(f){
   return whereOf(f).map(([s, rs]) =>
-    `<a href="https://www.themoviedb.org/movie/${f.id}/watch?locale=${rs[0]}" target="_blank" rel="noopener" title="${esc(rs.map(r => REGION_NAMES[r] || r).join(", "))}">` +
-    esc(s) + (oneRegion(s) ? "" : ` <span class="rg">${rs.join(" ")}</span>`) + `</a>`).join("");
+    `<span class="sv${oneRegion(s) ? "" : " x"}">` + esc(s) + (oneRegion(s) ? "" : `<span class="rg">${rs.join(" ")}</span>`) + `</span>`).join("");
 }
 const titleLink = f => `<a href="https://letterboxd.com/tmdb/${f.id}/" target="_blank" rel="noopener">${esc(breakable(f.title))}</a>${badge(f)}` +
   (isNew(f) ? `<span class="newtag">new</span>` : "");
@@ -451,6 +466,34 @@ function renderIndex(){
     if(!el) return;
     el.scrollIntoView({block:"start"});
   };
+  // A platform pill opens to the real width of its countries. The first time it's touched or hovered (and again after a
+  // resize) we measure that width and see which side has room in the card: to the right if it fits, else to the left
+  // (data-flip), else whichever side has more. The pills it would cover are marked (data-under) so CSS can fade them.
+  const measurePill = a => {
+    const g = a.querySelector(".rg");
+    if(!g || a.dataset.m === String(innerWidth)) return;
+    a.dataset.m = String(innerWidth);
+    const w = g.scrollWidth;
+    a.style.setProperty("--w", w + "px");
+    const need = w + 4, r = a.getBoundingClientRect(), card = a.closest(".film, .lrow").getBoundingClientRect();
+    const roomR = card.right - r.right, roomL = r.left - card.left;
+    const flip = need > roomR + 0.5 && roomL > roomR;
+    if(flip) a.dataset.flip = "1"; else delete a.dataset.flip;
+    const from = flip ? r.left - need : r.left, to = flip ? r.right : r.right + need;
+    for(const o of a.parentElement.children){
+      if(o === a) continue;
+      const q = o.getBoundingClientRect();
+      if(q.right > from && q.left < to && q.bottom > r.top && q.top < r.bottom) o.dataset.under = "1"; else delete o.dataset.under;
+    }
+  };
+  document.addEventListener("pointerover", e => { const a = e.target.closest?.(".where .sv.x"); if(a) measurePill(a); });
+  // Touch: a tap opens or closes a pill, and closes any other one that was open.
+  document.addEventListener("click", e => {
+    if(matchMedia("(hover:hover)").matches) return;
+    const a = e.target.closest?.(".where .sv.x");
+    document.querySelectorAll(".where .sv.open").forEach(o => { if(o !== a) o.classList.remove("open"); });
+    if(a){ measurePill(a); a.classList.toggle("open"); }
+  });
   ix.addEventListener("pointerdown", e => { active = true; try { ix.setPointerCapture(e.pointerId); } catch(_){} jump(e.clientY); e.preventDefault(); });
   ix.addEventListener("pointermove", e => { if(active) jump(e.clientY); });
   ix.addEventListener("pointerup", () => { active = false; last = null; });
@@ -489,7 +532,7 @@ function renderControls(){
   const svc = allPlatforms();
   const allYears = state.yearBuckets.size === YEAR_BUCKETS.length;
   const p = (cls, attrs, label, title) => `<button class="pill ${cls}" ${attrs}${title ? ` title="${esc(title)}"` : ""}>${esc(label)}</button>`;
-  const svcAll = p("all" + (defaultPlatforms().every(s => state.platforms.has(s)) ? " on" : ""), `data-svcall="1"`, "Platforms");
+  const svcAll = p("all" + (!state.platformsOpen || defaultPlatforms().every(s => state.platforms.has(s)) ? " on" : ""), `data-svcall="1"`, "Platforms");  // brown whenever collapsed
   const svcChoices = state.platformsOpen ? svc.map(s => p(state.platforms.has(s) ? "" : "off", `data-s="${esc(s)}"`, s)).join("") : "";
   const tspdtPill = (tspdt.size ? p("all" + (state.tspdtOnly ? " on" : ""), `data-tspdt="1"`, "TSPDT", "Only films in TSPDT's 1,000 Greatest Films, with their rank") : "") +
     (watched.size ? p("all" + (state.hideWatched ? " on" : ""), `data-watched="1"`, "Unseen") : "") +
@@ -520,7 +563,7 @@ function renderControls(){
   c.onclick = e => {
     const b = e.target.closest(".pill"); if(!b) return;
     const d = b.dataset;
-    if(d.svcall){ state.platformsOpen = !state.platformsOpen; if(!state.platformsOpen) state.platforms = new Set(defaultPlatforms()); }
+    if(d.svcall) state.platformsOpen = !state.platformsOpen;  // closing keeps the chosen platforms
     else if(d.s) state.platforms = toggleIn(state.platforms, svc, d.s);
     else if(d.yall){ state.yearOpen = !state.yearOpen; if(!state.yearOpen) state.yearBuckets = new Set(YEAR_BUCKETS.map(b => b.k)); }
     else if(d.y) state.yearBuckets = toggleIn(state.yearBuckets, YEAR_BUCKETS.map(b => b.k), d.y);

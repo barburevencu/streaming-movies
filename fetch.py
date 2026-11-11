@@ -35,7 +35,7 @@ PLATFORMS = {
     "Criterion": (["Criterion Channel"], ["US"]),
     "Mubi": (["MUBI"], SIX),
     "Kanopy": (["Kanopy"], ["US"]),
-    "HBO Max": (["HBO Max", "Max"], ["RO"]),
+    "HBO": (["HBO Max", "Max"], ["RO"]),
     "Apple TV": (["Apple TV", "Apple TV Plus", "Apple TV+"], ["US"]),  # the subscription; the store is "Apple TV Store"
     "Netflix": (["Netflix"], SIX),
     "Disney": (["Disney Plus", "Disney+"], SIX),
