@@ -93,6 +93,8 @@
     .seg .pill:hover { transform:none; box-shadow:inset 0 0 0 99px rgba(0,0,0,.08); }
   }
   .pill.all { font-weight:700; text-transform:uppercase; letter-spacing:.06em; }
+  .pill .x { margin-left:2px; padding:6px 4px 6px 6px; margin-top:-6px; margin-bottom:-6px; font-size:1.2em; line-height:1; opacity:.8; }
+  .pill .x:hover { opacity:1; }
   /* Left to right the pills follow the header stripes (ink, orange, yellow, teal), then pink. */
   .pill.all.on { background:var(--o); color:#fff8ea; }
   .pill[data-svcall].on { background:var(--fg); color:var(--bg); }
@@ -528,16 +530,21 @@ function fitSel(sel){
   sel.style.width = Math.ceil(_measure.measureText(sel.selectedOptions[0]?.text || "").width) + 13 + 32 + 2 + "px";
 }
 document.fonts?.ready.then(() => { const sel = document.getElementById("sort"); if(sel) fitSel(sel); });
+// Platforms and Year are always coloured: a tap opens, the next folds, keeping the choices.
+// Anything off its default? Then the folded pill shows how many are chosen, and a × that clears just that pill.
+const platformsChanged = () => { const d = defaultPlatforms(); return state.platforms.size !== d.length || !d.every(s => state.platforms.has(s)); };
+const yearsChanged = () => state.yearBuckets.size !== YEAR_BUCKETS.length;
 function renderControls(){
   const svc = allPlatforms();
   const allYears = state.yearBuckets.size === YEAR_BUCKETS.length;
-  const p = (cls, attrs, label, title) => `<button class="pill ${cls}" ${attrs}${title ? ` title="${esc(title)}"` : ""}>${esc(label)}</button>`;
-  const svcAll = p("all" + (!state.platformsOpen || defaultPlatforms().every(s => state.platforms.has(s)) ? " on" : ""), `data-svcall="1"`, "Platforms");  // brown whenever collapsed
+  const p = (cls, attrs, label, title, x = "") => `<button class="pill ${cls}" ${attrs}${title ? ` title="${esc(title)}"` : ""}>${esc(label)}${x}</button>`;
+  const clearX = `<span class="x" role="button" aria-label="Clear">×</span>`;
+  const svcAll = p("all on", `data-svcall="1"`, "Platforms" + (!state.platformsOpen && platformsChanged() ? ` (${state.platforms.size})` : ""), "", !state.platformsOpen && platformsChanged() ? clearX : "");
   const svcChoices = state.platformsOpen ? svc.map(s => p(state.platforms.has(s) ? "" : "off", `data-s="${esc(s)}"`, s)).join("") : "";
   const tspdtPill = (tspdt.size ? p("all" + (state.tspdtOnly ? " on" : ""), `data-tspdt="1"`, "TSPDT", "Only films in TSPDT's 1,000 Greatest Films, with their rank") : "") +
     (watched.size ? p("all" + (state.hideWatched ? " on" : ""), `data-watched="1"`, "Unseen") : "") +
     (watchlist.size ? p("all" + (state.watchlistOnly ? " on" : ""), `data-watchlist="1"`, "Watchlist", "Only films on my Letterboxd watchlist") : "");
-  const yearAll = p("all" + (allYears ? " on" : ""), `data-yall="1"`, "Year");
+  const yearAll = p("all on", `data-yall="1"`, "Year" + (!state.yearOpen && yearsChanged() ? ` (${state.yearBuckets.size})` : ""), "", !state.yearOpen && yearsChanged() ? clearX : "");
   const yearChoices = state.yearOpen ? YEAR_BUCKETS.map(b => p(state.yearBuckets.has(b.k) ? "" : "off", `data-y="${b.k}"`, b.label)).join("") : "";
   const sortSel = `<select id="sort" class="sel" aria-label="Sort movies">` +
     SORT_OPTS.filter(([v]) => v !== "tspdt" || tspdt.size).map(([v, l]) => `<option value="${v}">${l}</option>`).join("") + `</select>`;
@@ -563,9 +570,14 @@ function renderControls(){
   c.onclick = e => {
     const b = e.target.closest(".pill"); if(!b) return;
     const d = b.dataset;
+    if(e.target.closest(".x")){
+      if(d.svcall) state.platforms = new Set(defaultPlatforms());
+      else state.yearBuckets = new Set(YEAR_BUCKETS.map(b => b.k));
+      renderSoon(); return;
+    }
     if(d.svcall) state.platformsOpen = !state.platformsOpen;  // closing keeps the chosen platforms
     else if(d.s) state.platforms = toggleIn(state.platforms, svc, d.s);
-    else if(d.yall){ state.yearOpen = !state.yearOpen; if(!state.yearOpen) state.yearBuckets = new Set(YEAR_BUCKETS.map(b => b.k)); }
+    else if(d.yall) state.yearOpen = !state.yearOpen;
     else if(d.y) state.yearBuckets = toggleIn(state.yearBuckets, YEAR_BUCKETS.map(b => b.k), d.y);
     else if(d.tspdt){ state.tspdtOnly = !state.tspdtOnly; if(!state.tspdtOnly && state.sort === "tspdt") state.sort = "top"; }
     else if(d.watched) state.hideWatched = !state.hideWatched;
