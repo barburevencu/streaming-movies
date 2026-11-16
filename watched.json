@@ -1,5 +1,5 @@
 {
-"generated_at": "2026-11-11T19:29:29",
+"generated_at": "2026-11-16T10:38:33",
 "films": {
 "https://boxd.it/1DXW": 20156,
 "https://boxd.it/F3k": 49845,
@@ -1099,6 +1099,9 @@
 "rss:once-upon-a-time-in-hollywood": 466272,
 "rss:meshes-of-the-afternoon": 27040,
 "rss:blue-moon-2025": 1299655,
-"rss:the-terminator": 218
+"rss:the-terminator": 218,
+"rss:the-good-the-bad-and-the-ugly": 429,
+"rss:for-a-few-dollars-more": 938,
+"rss:a-fistful-of-dollars": 391
 }
 }
