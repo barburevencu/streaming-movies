@@ -48,6 +48,9 @@ TMDB_API = "https://api.themoviedb.org/3"
 POSTER = "https://image.tmdb.org/t/p/w185"
 COUNTRY_SHORT = {"United States of America": "USA", "United Kingdom": "UK",
                  "Soviet Union": "USSR", "Union of Soviet Socialist Republics": "USSR"}
+# Fixes for wrong TMDB production countries, keyed by TMDB id.
+COUNTRY_OVERRIDES = {218: "USA",  # The Terminator; TMDB lists UK first
+                     280: "USA"}  # Terminator 2: Judgment Day; TMDB lists France first
 
 
 def load_key():
@@ -240,6 +243,8 @@ def main():
         d = cache.get(str(mid))
         if not d:
             continue
+        if mid in COUNTRY_OVERRIDES:
+            d = {**d, "country": COUNTRY_OVERRIDES[mid]}
         films.append(slim({"id": mid, **d, "added": added[mid],
                            "where": {s: sorted(rs, key=lambda r: SIX.index(r) if r in SIX else 99)
                                      for s, rs in svcs.items()}}))
