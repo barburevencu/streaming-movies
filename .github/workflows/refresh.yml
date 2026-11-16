@@ -1,10 +1,10 @@
-# Fetches what's streaming every Monday morning, commits the refreshed data,
+# Fetches what's streaming every Sunday morning, commits the refreshed data,
 # and publishes the site to GitHub Pages.
 name: Refresh and publish
 
 on:
   schedule:
-    - cron: "0 5 * * 1"  # Mondays 05:00 UTC
+    - cron: "0 5 * * 0"  # Sundays 05:00 UTC
   workflow_dispatch:
   push:
     branches: [main]
