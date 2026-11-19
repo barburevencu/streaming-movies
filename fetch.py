@@ -38,8 +38,6 @@ PLATFORMS = {
     "HBO": (["HBO Max", "Max"], ["RO"]),
     "Apple TV": (["Apple TV", "Apple TV Plus", "Apple TV+"], ["US"]),  # the subscription; the store is "Apple TV Store"
     "Netflix": (["Netflix"], SIX),
-    "Disney": (["Disney Plus", "Disney+"], SIX),
-    "MGM+": (["MGM Plus"], ["US"]),
 }
 
 AWAY = 30  # days a film must be off the site to count as new when it returns

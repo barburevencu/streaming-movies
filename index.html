@@ -271,7 +271,7 @@ const initialState = () => ({ view:"posters", platforms:new Set(), regions:new S
 const state = initialState();
 const allPlatforms = () => data.platforms.map(s => s.name);
 // Platforms left off until picked: the Platforms pill counts as "all" without them, and closing it returns here.
-const OFF_BY_DEFAULT = ["Disney"];
+const OFF_BY_DEFAULT = [];
 const defaultPlatforms = () => allPlatforms().filter(s => !OFF_BY_DEFAULT.includes(s));
 const allRegions = () => [...new Set(data.platforms.flatMap(s => s.regions))];
 // A platform we only check in one country (Criterion, Kanopy…) needs no country label.
